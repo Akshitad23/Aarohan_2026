@@ -17,10 +17,10 @@ Use a local SQLite rehearsal database. It is separate from the clean Neon compet
 From PowerShell at the project root, prepare the local rehearsal config once:
 
 ```powershell
-Copy-Item backend\rehearsal.env.example backend\.env
+if (-not (Test-Path backend\.env)) { Copy-Item backend\rehearsal.env.example backend\.env }
 ```
 
-Edit `backend\.env` and set a rehearsal-only `ADMIN_PASSWORD`. Leave `DATABASE_URL` blank and `REQUIRE_DATABASE_URL=false`. Leave `GROQ_API_KEY` blank to exercise the local Ollama backup without using Groq quota. If Ollama is not installed on the rehearsal laptop, install and warm `gemma3:4b` first or enter a valid Groq key instead.
+If `backend\.env` already exists, do not overwrite it; confirm it has rehearsal-only settings first. Set a rehearsal-only `ADMIN_PASSWORD`. Leave `DATABASE_URL` blank and `REQUIRE_DATABASE_URL=false`. Leave `GROQ_API_KEY` blank to exercise the local Ollama backup without using Groq quota. If Ollama is not installed on the rehearsal laptop, install and warm `gemma3:4b` first or enter a valid Groq key instead.
 
 Start the local site:
 
