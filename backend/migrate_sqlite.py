@@ -25,6 +25,7 @@ TABLE_COLUMNS = {
     'timeline_attempts':['id','session_id','team_id','batch_id','submitted_at','attempt','placed_ids','slot_results','correct','score'],
     'word_answers':['id','session_id','team_id','batch_id','submitted_at','word_index','answer','correct','outcome'],
     'failed_requests':['id','session_id','team_id','batch_id','submitted_at','prompt','target','error','reason','retry_seconds','details'],
+    'prompt_requests':['request_id','session_id','team_id','batch_id','submitted_at','prompt','target','status','lease_until','completed_at','details'],
 }
 REQUIRED_TABLES = {'event','teams','game_sessions','quality_audit'}
 

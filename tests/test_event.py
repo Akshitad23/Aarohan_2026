@@ -19,7 +19,7 @@ logger_db.DATABASE_URL=''
 logger_db.DB_PATH=Path(os.environ['DATABASE_PATH'])
 import app as server
 import event_service as service
-from timeglitch_engine import TimeglitchSession
+from timeglitch_engine import ROUND1_SECONDS,ROUND2_SECONDS,TimeglitchSession
 
 class EventTests(unittest.TestCase):
     def setUp(self):
@@ -123,13 +123,13 @@ class EventTests(unittest.TestCase):
         self.assertEqual(result.json['state']['phase'], 'round2')
         self.assertEqual(result.json['state']['round1']['score'], 0)
         with logger_db.transaction() as conn:
-            conn.execute("UPDATE event_sessions SET started_at=? WHERE batch_id='morning'", (time.time()-601,))
+            conn.execute("UPDATE event_sessions SET started_at=? WHERE batch_id='morning'", (time.time()-ROUND1_SECONDS-1,))
         timed = service.get_state(two['team_token'])
         self.assertEqual(timed['phase'], 'round2')
         self.assertEqual(timed['round1']['score'], 0)
-        self.assertLess(timed['round2']['remaining_seconds'], 600)
+        self.assertLess(timed['round2']['remaining_seconds'], ROUND2_SECONDS)
         with logger_db.transaction() as conn:
-            conn.execute("UPDATE event_sessions SET started_at=? WHERE batch_id='morning'", (time.time()-1201,))
+            conn.execute("UPDATE event_sessions SET started_at=? WHERE batch_id='morning'", (time.time()-ROUND1_SECONDS-ROUND2_SECONDS-1,))
         expired = service.get_state(two['team_token'])
         self.assertEqual(expired['phase'], 'finished')
 
@@ -277,6 +277,58 @@ class EventTests(unittest.TestCase):
         persisted = service.get_state(registered['team_token'])
         self.assertEqual(persisted['round2']['words'][0]['score'], 2)
         self.assertEqual(persisted['round2']['prompt_count'], 0)
+        detail=service.admin_detail(engine.session_id)
+        self.assertEqual(len(detail['failed_requests']),1)
+        self.assertIn(detail['failed_requests'][0]['ai_fallback_reason'],('request_interrupted','request_expired'))
+
+    def test_unexpected_prompt_error_is_sanitized_and_durable(self):
+        registered=self.register()
+        self.start()
+        self.solve_round1(registered)
+        message='Explain the first cipher protocol with an unrelated example.'
+        with patch.object(TimeglitchSession,'process_prompt',side_effect=RuntimeError('sensitive diagnostic must stay private')):
+            result=self.client.post('/api/tg/round2/prompt',headers=self.headers(registered),json={'message':message,'target':1})
+        self.assertEqual(result.status_code,503)
+        self.assertNotIn('sensitive diagnostic',json.dumps(result.json))
+        self.assertEqual(result.json['state']['round2']['prompt_count'],0)
+        detail=service.admin_detail(self.engine(registered).session_id)
+        self.assertEqual(detail['failed_requests'][0]['prompt'],message)
+        self.assertEqual(detail['failed_requests'][0]['ai_fallback_reason'],'internal_request_error')
+        with logger_db.connect() as conn:
+            request=conn.execute('SELECT * FROM prompt_requests').fetchone()
+            self.assertEqual(request['status'],'failed')
+            self.assertIsNotNone(request['completed_at'])
+
+    def test_interrupted_worker_request_remains_exportable(self):
+        from export_xlsx import export_batch
+        from openpyxl import load_workbook
+        import io
+        registered=self.register()
+        self.start()
+        self.solve_round1(registered)
+        engine=self.engine(registered)
+        message='A submitted prompt whose worker stopped.'
+        with patch.object(TimeglitchSession,'process_prompt',side_effect=SystemExit('simulated worker exit')):
+            with self.assertRaises(SystemExit):
+                service.prompt(registered['team_token'],{'message':message,'target':1})
+        with logger_db.transaction() as conn:
+            request=conn.execute('SELECT * FROM prompt_requests').fetchone()
+            self.assertEqual(request['prompt'],message)
+            self.assertEqual(request['status'],'pending')
+            conn.execute('UPDATE prompt_requests SET lease_until=?',(time.time()-1,))
+        detail=service.admin_detail(engine.session_id)
+        self.assertEqual(detail['failed_requests'][0]['request_status'],'interrupted')
+        payload,_=export_batch('morning')
+        book=load_workbook(io.BytesIO(payload))
+        headers=[cell.value for cell in book['Prompts'][1]]
+        rows=list(book['Prompts'].iter_rows(min_row=2,values_only=True))
+        self.assertEqual(len(rows),1)
+        self.assertEqual(rows[0][headers.index('prompt')],message)
+        self.assertEqual(rows[0][headers.index('request_status')],'interrupted')
+        service.mutate(registered['team_token'],'answer',{'word_index':1,'answer':'WRONG'})
+        detail=service.admin_detail(engine.session_id)
+        self.assertEqual(len(detail['failed_requests']),1)
+        self.assertEqual(detail['failed_requests'][0]['ai_fallback_reason'],'request_interrupted')
 
     def test_schema_initialization_from_multiple_processes(self):
         import subprocess

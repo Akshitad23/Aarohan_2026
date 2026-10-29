@@ -9,6 +9,7 @@
   let selectionVersion = 0;
   let refreshing = false, changingEvent = false, rosterLoaded = false;
   let reviewId = null, rosterTeam = null, tableSignature = '';
+  let reviewVersion = 0, rosterVersion = 0, reviewSaving = false;
   const batchPath = path => `${path}?batch_id=${encodeURIComponent(selectedBatchId || '')}`;
   const checkAuth = error => { if (error.status === 401 || error.status === 403) { api.logout(); location.replace('/admin-login'); } };
   const statistic = (value, label) => { const card = api.node('div', undefined, 'score'); card.append(api.node('strong', String(value)), api.node('span', label)); return card; };
@@ -34,7 +35,7 @@
     if (!$('teamsTable').children.length) { const row = api.node('tr'); const cell = api.node('td', teams.length ? 'No matching teams.' : 'No teams registered for this session.'); cell.colSpan = 10; row.append(cell); $('teamsTable').append(row); }
   }
   function reviewAccess() {
-    const allowed = Boolean(reviewId && event.status === 'ended');
+    const allowed = Boolean(reviewId && event.status === 'ended' && !reviewSaving);
     ['qualityScore', 'qualityReason', 'saveReview'].forEach(id => { $(id).disabled = !allowed; });
   }
   function renderEvent() {
@@ -113,9 +114,12 @@
   }
   const timeValue = entry => { const timestamp = entry.submitted_at ?? entry.timestamp; return typeof timestamp === 'number' ? timestamp * 1000 : Date.parse(timestamp || '') || 0; };
   async function openReview(id) {
+    const version = ++reviewVersion;
+    const batch = selectedBatchId;
     $('reviewPanel').hidden = false; $('reviewError').textContent = ''; $('reviewTeam').textContent = 'Loading transcript'; $('transcript').replaceChildren(); reviewId = null; reviewAccess();
     try {
       const result = await api.request(`/api/admin/session/${encodeURIComponent(id)}`, {admin:true});
+      if (version !== reviewVersion || batch !== selectedBatchId) return;
       const session = result.session || {};
       if (session.event?.batch_id && session.event.batch_id !== selectedBatchId) return;
       reviewId = id; $('reviewTeam').textContent = `${session.team_name || session.team_id} / ${batchName(selectedBatchId)}`;
@@ -138,9 +142,10 @@
       });
       if (!messages.length) $('transcript').append(api.node('p', 'No prompts recorded.', 'muted'));
       reviewAccess(); $('reviewPanel').scrollIntoView({behavior:'smooth', block:'start'});
-    } catch (error) { checkAuth(error); $('reviewError').textContent = error.message; }
+    } catch (error) { checkAuth(error); if (version === reviewVersion && batch === selectedBatchId) $('reviewError').textContent = error.message; }
   }
   function openRoster(team) {
+    rosterVersion++;
     rosterTeam = team; $('rosterPanel').hidden = false; $('rosterTitle').textContent = `${team.team_name} / ${batchName(team.batch_id || selectedBatchId)}`;
     $('rosterDetails').replaceChildren(api.node('p', `${team.team_id} / ${team.school_name}`));
     const list = api.node('ol'); (team.participants || []).forEach(member => list.append(api.node('li', `${member.name}, grade ${member.grade}`))); $('rosterDetails').append(list);
@@ -148,36 +153,46 @@
   }
   $('batchSelect').onchange = () => {
     selectionVersion++;
+    reviewVersion++; rosterVersion++;
     selectedBatchId = $('batchSelect').value; teams = []; sessions = []; event = {}; rosterLoaded = false; tableSignature = '';
     reviewId = null; rosterTeam = null; $('reviewPanel').hidden = true; $('rosterPanel').hidden = true; $('recoveryCode').value = '';
     renderEvent(); renderTable(); refresh();
   };
   $('reviewForm').onsubmit = async submit => {
-    submit.preventDefault(); if (!reviewId || event.status !== 'ended') return;
-    $('saveReview').disabled = true; $('reviewError').textContent = '';
-    try { await api.request(`/api/admin/session/${encodeURIComponent(reviewId)}/quality`, {method:'PATCH', admin:true, body:{score:Number($('qualityScore').value), reason:$('qualityReason').value.trim()}}); $('reviewMetadata').textContent = 'Reviewed score saved.'; await refresh(); }
-    catch (error) { checkAuth(error); $('reviewError').textContent = error.message; }
-    finally { reviewAccess(); }
+    submit.preventDefault(); if (reviewSaving || !reviewId || event.status !== 'ended') return;
+    const id = reviewId, batch = selectedBatchId, version = reviewVersion;
+    const body = {score:Number($('qualityScore').value), reason:$('qualityReason').value.trim()};
+    reviewSaving = true; reviewAccess(); $('reviewError').textContent = '';
+    try {
+      await api.request(`/api/admin/session/${encodeURIComponent(id)}/quality`, {method:'PATCH', admin:true, body});
+      if (reviewVersion === version && selectedBatchId === batch && reviewId === id) $('reviewMetadata').textContent = 'Reviewed score saved.';
+      await refresh();
+    }
+    catch (error) { checkAuth(error); if (reviewVersion === version && selectedBatchId === batch && reviewId === id) $('reviewError').textContent = error.message; }
+    finally { reviewSaving = false; reviewAccess(); }
   };
   async function download(path, extension) {
     if (!selectedBatchId) return;
+    const batch = selectedBatchId;
+    const token = api.admin().token;
     try {
-      const response = await fetch(batchPath(path), {headers:{'X-Admin-Key':api.admin().token}, cache:'no-store'});
+      const response = await fetch(`${path}?batch_id=${encodeURIComponent(batch)}`, {headers:{'X-Admin-Key':token}, cache:'no-store'});
       if (!response.ok) { const error = new Error('Export failed. Refresh and try again.'); error.status = response.status; throw error; }
-      const url = URL.createObjectURL(await response.blob()); const link = api.node('a'); link.href = url; link.download = `aarohan-${selectedBatchId}-${extension}`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const url = URL.createObjectURL(await response.blob()); const link = api.node('a'); link.href = url; link.download = `aarohan-${batch}-${extension}`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) { checkAuth(error); $('adminError').textContent = error.message; }
   }
   $('activateBatch').onclick = () => changeEvent('activate');
   $('startEvent').onclick = () => changeEvent('start');
   $('endEvent').onclick = () => { if (window.confirm(`End the ${batchName(selectedBatchId)} session? Its teams cannot continue, and its results will be available for grading.`)) changeEvent('end'); };
   $('refresh').onclick = refresh; $('teamSearch').oninput = renderTable;
-  $('closeReview').onclick = () => { $('reviewPanel').hidden = true; reviewId = null; };
-  $('closeRoster').onclick = () => { $('rosterPanel').hidden = true; rosterTeam = null; $('recoveryCode').value = ''; };
+  $('closeReview').onclick = () => { reviewVersion++; $('reviewPanel').hidden = true; reviewId = null; };
+  $('closeRoster').onclick = () => { rosterVersion++; $('rosterPanel').hidden = true; rosterTeam = null; $('recoveryCode').value = ''; };
   $('recoverTeam').onclick = async () => {
     if (!rosterTeam || !window.confirm(`Issue a new private resume code for ${rosterTeam.team_name}? Their previous code will stop working.`)) return;
+    const teamId = rosterTeam.team_id, version = rosterVersion;
     $('recoverTeam').disabled = true; $('recoveryError').textContent = '';
-    try { const result = await api.request(`/api/admin/teams/${encodeURIComponent(rosterTeam.team_id)}/token`, {method:'POST', admin:true, body:{}}); $('recoveryCode').value = result.team_token; $('recoveryArea').hidden = false; }
-    catch (error) { checkAuth(error); $('recoveryError').textContent = error.message; }
+    try { const result = await api.request(`/api/admin/teams/${encodeURIComponent(teamId)}/token`, {method:'POST', admin:true, body:{}}); if (version === rosterVersion && rosterTeam?.team_id === teamId) { $('recoveryCode').value = result.team_token; $('recoveryArea').hidden = false; } }
+    catch (error) { checkAuth(error); if (version === rosterVersion && rosterTeam?.team_id === teamId) $('recoveryError').textContent = error.message; }
     finally { $('recoverTeam').disabled = false; }
   };
   $('exportScores').onclick = () => download('/api/admin/export', 'scores.csv');

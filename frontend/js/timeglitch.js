@@ -7,6 +7,8 @@
   let busy = false;
   let polling = false;
   let mutationVersion = 0;
+  let renderVersion = 0;
+  let accessChanged = false;
   let nextPollAt = 0;
   let remainingAt = 0;
   let receivedAt = performance.now();
@@ -18,6 +20,7 @@
   const format = seconds => `${Math.floor(Math.max(0, seconds) / 60).toString().padStart(2, '0')}:${Math.ceil(Math.max(0, seconds) % 60).toString().padStart(2, '0')}`;
   const unwrap = result => result.state || result;
   if (!access?.token) { location.replace('/'); return; }
+  const teamToken = access.token;
   $('teamName').textContent = access.team?.team_name || 'Your team';
 
   function scores(target, state) {
@@ -98,7 +101,9 @@
     $('timeline').querySelectorAll('button').forEach(button => { if (busy || expired) button.disabled = true; });
   }
   function render(state) {
+    if (accessChanged) return;
     if (!state?.phase) throw new Error('The server returned an invalid game state. Contact the organiser.');
+    renderVersion++;
     state.prompt_history = api.mergeHistory(current?.prompt_history || [], state.prompt_history || state.round2?.prompt_history || [], state.prompt_history_complete !== false);
     const oldPhase = current?.phase; current = state;
     receivedAt = performance.now(); remainingAt = Number((state.phase === 'round1' ? state.round1 : state.round2)?.remaining_seconds || 0);
@@ -132,22 +137,24 @@
       $('qualityReviewStatus').textContent = state.quality_status === 'reviewed' || state.quality_reviewed ? 'The organiser has reviewed your prompt quality score.' : 'Prompt quality and the final score are pending. Organisers grade the saved transcript after this session ends.';
     }
     updateControls(); tick();
+    if (oldPhase !== state.phase) $(`${state.phase}Heading`).focus();
   }
   async function refresh(force = false) {
-    if (polling || busy || document.hidden || !force && Date.now() < nextPollAt) return;
+    if (accessChanged || polling || busy || document.hidden || !force && Date.now() < nextPollAt) return;
     polling = true;
     nextPollAt = Date.now() + (current?.phase === 'finished' ? 15000 : 2500);
     const version = mutationVersion;
     const lastTurn = Math.max(0, ...(current?.prompt_history || []).map(entry => Number(entry.turn) || 0));
-    try { const result = await api.request(`/api/tg/session/status?history_after=${lastTurn}`); if (version === mutationVersion) render(unwrap(result)); $('connection').textContent = ''; }
+    try { const result = await api.request(`/api/tg/session/status?history_after=${lastTurn}`, {token:teamToken}); if (!accessChanged && version === mutationVersion) { render(unwrap(result)); $('connection').textContent = ''; } }
     catch (error) { $('connection').textContent = error.status === 401 ? 'This team access code is no longer valid. Return to Team details to resume with the correct code.' : `${error.message} Reconnecting automatically.`; }
     finally { polling = false; }
   }
   async function mutate(path, body = {}, onSuccess) {
-    if (busy) return;
+    if (accessChanged || busy) return;
     busy = true; mutationVersion++; $('gameError').textContent = ''; updateControls();
     try {
-      const result = await api.request(path, {method:'POST', body});
+      const result = await api.request(path, {method:'POST', body, token:teamToken});
+      if (accessChanged) return false;
       if (result.ai_available === false) {
         const error = new Error(result.error || 'Neither AI provider could answer. Your prompt is saved in the input. Retry shortly.');
         error.state = result.state; error.details = result; throw error;
@@ -173,16 +180,27 @@
     event.preventDefault(); const message = $('promptInput').value.trim(); if (!message) return;
     $('promptStatus').textContent = 'CHRONOS is responding...';
     const ok = await mutate('/api/tg/round2/prompt', {message, target:Number($('targetWord').value)});
-    if (ok) $('promptInput').value = ''; $('promptStatus').textContent = ''; if (current?.phase === 'round2') $('promptInput').focus();
+    if (ok) $('promptInput').value = ''; $('promptStatus').textContent = ''; if (current?.phase === 'round2' && !accessChanged) $('promptInput').focus();
   };
   $('finishGame').onclick = () => {
     if (window.confirm('Finish Round 2 now? You will keep your current marks and cannot send more prompts or word answers.')) mutate('/api/tg/round2/finish');
   };
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(true); });
   window.addEventListener('online', () => refresh(true));
+  window.addEventListener('storage', event => {
+    if ((event.key === 'aarohan_team_access' || event.key === null) && api.team()?.token !== teamToken) {
+      accessChanged = true; mutationVersion++;
+      location.reload();
+    }
+  });
   setInterval(refresh, 2500); setInterval(tick, 250);
   (async () => {
-    try { render(unwrap(await api.request('/api/tg/session/start', {method:'POST', body:{team_id:access.team?.team_id}}))); }
-    catch (error) { $('connection').textContent = `${error.message} Retrying automatically.`; }
+    const version = renderVersion;
+    const mutation = mutationVersion;
+    try {
+      const result = await api.request('/api/tg/session/start', {method:'POST', body:{team_id:access.team?.team_id}, token:teamToken});
+      if (!accessChanged && renderVersion === version && mutationVersion === mutation) render(unwrap(result));
+    }
+    catch (error) { if (!accessChanged && renderVersion === version) $('connection').textContent = `${error.message} Retrying automatically.`; }
   })();
 })();

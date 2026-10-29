@@ -95,8 +95,8 @@ input, select, textarea {
   line-height: 1.5;
 }
 textarea { resize: vertical; min-height: 130px; }
-input::placeholder, textarea::placeholder { color: #737c89; opacity: 1; }
-input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible, summary:focus-visible {
+input::placeholder, textarea::placeholder { color: #626c7b; opacity: 1; }
+input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible, summary:focus-visible, .table-wrap:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
@@ -112,7 +112,7 @@ label {
   letter-spacing: .1em;
   text-transform: uppercase;
 }
-h1, h2, h3 { color: var(--ink); }
+h1, h2, h3 { color: var(--ink); overflow-wrap: anywhere; }
 h1 {
   margin: 20px 0 24px;
   font-family: var(--display);

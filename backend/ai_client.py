@@ -6,8 +6,10 @@ import re
 import socket
 import threading
 import time
+import unicodedata
+from urllib.error import HTTPError
 from urllib.parse import urlparse
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from groq import Groq
 import provider_budget
@@ -25,6 +27,16 @@ _status = {"successful_calls": 0, "provider_successful_calls": 0, "failed_calls"
            "backup_last_success_at": None}
 MAX_CONTEXT_BYTES = max(2000, min(6000, int(os.getenv("GROQ_CONTEXT_BYTES", "2800"))))
 _backup_capacity = threading.BoundedSemaphore(2)
+
+
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # A gateway redirect must not forward its bearer token to a new origin
+        # or downgrade the configured HTTPS connection.
+        raise HTTPError(req.full_url, code, "Backup redirects are disabled", headers, fp)
+
+
+urlopen = build_opener(NoRedirect).open
 
 
 def _backup_config():
@@ -151,19 +163,24 @@ def _call_with_timeout(fn, timeout=TIMEOUT, *, tokens=MAX_TOKENS, team_id="", me
 
 
 def _redact(text, protected_terms):
-    text = str(text)
+    text = unicodedata.normalize("NFKC", str(text))
     for term in sorted((str(t) for t in protected_terms if t), key=len, reverse=True):
         text = re.sub(re.escape(term), "[archive data removed]", text, flags=re.I)
         if term.isalpha():
             spaced = r"(?<![A-Za-z])" + r"[\W_]{0,3}".join(re.escape(c) for c in term) + r"(?![A-Za-z])"
             text = re.sub(spaced, "[archive data removed]", text, flags=re.I)
+        elif re.fullmatch(r"\d+(?:-\d+)+", term):
+            # A1Z26 students may copy a number sequence using spaces, commas,
+            # slashes, or newlines instead of the displayed hyphens.
+            sequence = r"(?<!\d)" + r"[\s,;:/|_-]+".join(re.escape(number) for number in term.split("-")) + r"(?!\d)"
+            text = re.sub(sequence, "[archive data removed]", text)
     return text
 
 
 def _contains_word(text, word):
     # Catch both ordinary plaintext and attempts to space/punctuate its letters.
     pattern = r"(?<![A-Za-z])" + r"[\W_]{0,3}".join(re.escape(c) for c in word) + r"(?![A-Za-z])"
-    return bool(re.search(pattern, text, re.I))
+    return bool(re.search(pattern, unicodedata.normalize("NFKC", text), re.I))
 
 
 def _clip(text, byte_limit):
@@ -193,6 +210,8 @@ def _ollama_call(messages):
         if data.get("error") or not isinstance(raw, str) or not data.get("done", False):
             return None, "backup_invalid_response"
         return raw, None
+    except HTTPError as error:
+        return None, "backup_redirect_rejected" if 300 <= error.code < 400 else "backup_busy" if error.code == 429 else "backup_error"
     except (TimeoutError, socket.timeout):
         return None, "backup_timeout"
     except Exception as error:

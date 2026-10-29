@@ -4,7 +4,7 @@ A team can earn 10 marks in each event session. Morning and Afternoon keep separ
 
 | Component | Maximum | Award rule |
 | --- | ---: | --- |
-| Timeline | 2 | All five cards in chronological order within three attempts and ten minutes |
+| Timeline | 2 | All five cards in chronological order within three attempts and five minutes |
 | First word | 2 | Correct answer submitted for that word |
 | Second word | 2 | Correct answer submitted for that word |
 | Prompt quality | 4 | Organizers grade the recorded transcript after the event session ends |

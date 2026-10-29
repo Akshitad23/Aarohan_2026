@@ -3,9 +3,10 @@ import hashlib
 import json
 import secrets
 import time
+from contextlib import nullcontext
 from datetime import datetime, timezone
 from logger_db import connect, transaction
-from timeglitch_engine import ROUND2_SECONDS, TimeglitchSession
+from timeglitch_engine import ROUND1_SECONDS, ROUND2_SECONDS, TimeglitchSession
 
 class EventError(Exception):
     def __init__(self, message, status=400, details=None):
@@ -147,7 +148,7 @@ def snapshot(engine, row, event):
         return state
     r1, r2 = state['round1'], state['round2']
     r1['attempts_left'] = max(0, 3 - engine.round1_attempts)
-    r1['deadline'] = event['started_at'] + 600 if event['started_at'] else None
+    r1['deadline'] = event['started_at'] + ROUND1_SECONDS if event['started_at'] else None
     if engine.round2_start_time:
         r2['deadline'] = engine.round2_start_time.timestamp() + ROUND2_SECONDS
     for index, word in enumerate(r2.get('words', []), 1):
@@ -192,10 +193,12 @@ def mutate(token, action, data):
         refresh(engine, event)
         if event['status'] == 'waiting':
             raise EventError('Wait for the administrator to start the event.', 409)
+        expire_prompt_requests(conn,engine.session_id,time.time())
         if row['pending_token'] and row['pending_until'] > time.time():
             raise EventError('Your previous prompt is still being processed.', 409)
         if row['pending_token']:
             # Supersede an expired provider request before changing game state.
+            expire_prompt_requests(conn,engine.session_id,time.time())
             conn.execute('UPDATE game_sessions SET pending_token=NULL,pending_until=0 WHERE session_id=?', (engine.session_id,))
         if engine.is_finished:
             if action == 'answer':
@@ -256,7 +259,10 @@ def prompt(token, data):
             raise EventError('Wait a moment before sending another prompt.', 429)
         if engine.round2_prompt_count >= 100:
             raise EventError('The 100-prompt session limit has been reached.', 429)
+        expire_prompt_requests(conn,engine.session_id,now)
         save(conn, engine)
+        conn.execute('INSERT INTO prompt_requests(request_id,session_id,team_id,batch_id,submitted_at,prompt,target,status,lease_until,details) VALUES(?,?,?,?,?,?,?,?,?,?)',
+            (reservation,engine.session_id,engine.team_id,team['batch_id'],now,message,str(target) if target is not None else None,'pending',now+90,'{}'))
         conn.execute('UPDATE game_sessions SET pending_token=?,pending_until=?,last_prompt_at=? WHERE session_id=?',
                      (reservation, now + 90, now, engine.session_id))
     try:
@@ -266,23 +272,62 @@ def prompt(token, data):
         with transaction() as conn:
             current = conn.execute('SELECT * FROM game_sessions WHERE session_id=?', (engine.session_id,)).fetchone()
             if current['pending_token'] != reservation:
+                record_prompt_failure(conn,reservation,{'error':'This request expired before it could be saved. Refresh your session.',
+                    'ai_fallback_reason':'request_expired','ai_retry_after_seconds':0,'retryable':True})
+                # Commit the request outcome before reporting the stale result.
+                stale=True
+            else:
+                stale=False
+            if stale:
+                response=None
+            else:
+                event = event_state(conn,team['batch_id'])
+                refresh(engine, event)
+                if result.get('error'):
+                    record_prompt_failure(conn,reservation,result)
+                else:
+                    conn.execute("UPDATE prompt_requests SET status='accepted',completed_at=?,details=? WHERE request_id=? AND status='pending'",
+                        (time.time(),json.dumps({'turn':engine.round2_prompt_count}),reservation))
+                save(conn, engine)
+                conn.execute('UPDATE game_sessions SET pending_token=NULL,pending_until=0 WHERE session_id=?', (engine.session_id,))
+                response = {**result, 'state': snapshot(engine, current, event)}
+        if stale:
                 raise EventError('This request expired. Refresh your session before trying again.', 409)
-            event = event_state(conn,team['batch_id'])
-            refresh(engine, event)
-            if result.get('error'):
-                details = {key:value for key,value in result.items() if key not in ('state',)}
-                conn.execute('INSERT INTO failed_requests(session_id,team_id,batch_id,submitted_at,prompt,target,error,reason,retry_seconds,details) VALUES(?,?,?,?,?,?,?,?,?,?)',
-                    (engine.session_id,engine.team_id,team['batch_id'],now,message,str(target) if target is not None else None,str(result['error']),
-                     str(result.get('ai_fallback_reason','provider_unavailable')),int(result.get('ai_retry_after_seconds',0)),json.dumps(details)))
-            save(conn, engine)
-            conn.execute('UPDATE game_sessions SET pending_token=NULL,pending_until=0 WHERE session_id=?', (engine.session_id,))
-            response = {**result, 'state': snapshot(engine, current, event)}
         if result.get('error'):
             raise EventError(str(result['error']),503,response)
         return response
+    except EventError as error:
+        with transaction() as conn:
+            record_prompt_failure(conn,reservation,{'error':str(error),'ai_fallback_reason':'request_rejected',
+                'ai_retry_after_seconds':0,'retryable':error.status>=500})
+        raise
+    except Exception as error:
+        failure={'error':'The AI request could not be completed. Your prompt was saved for organizer review and was not counted.',
+            'retryable':True,'ai_available':False,'ai_fallback_reason':'internal_request_error','ai_retry_after_seconds':0,
+            'error_type':type(error).__name__}
+        with transaction() as conn:
+            record_prompt_failure(conn,reservation,failure)
+        raise EventError(failure['error'],503,{**failure,'state':get_state(token)}) from None
     finally:
         with transaction() as conn:
             conn.execute('UPDATE game_sessions SET pending_token=NULL,pending_until=0 WHERE pending_token=?', (reservation,))
+
+def record_prompt_failure(conn,request_id,result):
+    request=conn.execute('SELECT * FROM prompt_requests WHERE request_id=?',(request_id,)).fetchone()
+    if not request or request['status']!='pending':
+        return
+    details={key:value for key,value in result.items() if key!='state'}
+    conn.execute('INSERT INTO failed_requests(session_id,team_id,batch_id,submitted_at,prompt,target,error,reason,retry_seconds,details) VALUES(?,?,?,?,?,?,?,?,?,?)',
+        (request['session_id'],request['team_id'],request['batch_id'],request['submitted_at'],request['prompt'],request['target'],
+         str(result.get('error','The AI request did not complete.')),str(result.get('ai_fallback_reason','provider_unavailable')),
+         int(result.get('ai_retry_after_seconds',0)),json.dumps(details)))
+    conn.execute("UPDATE prompt_requests SET status='failed',completed_at=?,details=? WHERE request_id=?",
+        (time.time(),json.dumps(details),request_id))
+
+def expire_prompt_requests(conn,session_id,now):
+    for request in conn.execute("SELECT request_id FROM prompt_requests WHERE session_id=? AND status='pending' AND lease_until<=?",(session_id,now)).fetchall():
+        record_prompt_failure(conn,request['request_id'],{'error':'The server stopped processing this request before an outcome was saved.',
+            'ai_fallback_reason':'request_interrupted','ai_retry_after_seconds':0,'retryable':True})
 
 def start_event(batch_id=None):
     with transaction() as conn:
@@ -337,8 +382,8 @@ def log_answer(conn,engine,batch_id,data,correct,outcome):
         (engine.session_id,engine.team_id,batch_id,time.time(),str(data.get('word_index',data.get('word_id',''))),str(data.get('answer',''))[:100],int(correct) if correct is not None else None,outcome))
 
 
-def admin_sessions(batch_id=None):
-    with connect() as conn:
+def admin_sessions(batch_id=None,connection=None):
+    with nullcontext(connection) if connection is not None else connect() as conn:
         event = event_state(conn,batch_id)
         result = []
         for team in conn.execute('SELECT * FROM teams WHERE batch_id=? ORDER BY registered_at',(event['batch_id'],)).fetchall():
@@ -354,8 +399,8 @@ def admin_sessions(batch_id=None):
         return {'sessions':result,'event':event,'batches':list_batches(conn),'total':len(result)}
 
 
-def admin_detail(session_id):
-    with connect() as conn:
+def admin_detail(session_id,connection=None):
+    with nullcontext(connection) if connection is not None else connect() as conn:
         row = conn.execute('SELECT * FROM game_sessions WHERE session_id=?',(session_id,)).fetchone()
         if not row:
             raise EventError('Session not found.',404)
@@ -373,6 +418,13 @@ def admin_detail(session_id):
             record['ai_retry_after_seconds']=record['retry_seconds']
             record['provider_details']=json.loads(record.pop('details'))
             failed.append(record)
+        for item in conn.execute("SELECT * FROM prompt_requests WHERE session_id=? AND status='pending' ORDER BY submitted_at",(session_id,)):
+            interrupted=item['lease_until']<=time.time()
+            failed.append({'id':item['request_id'],'timestamp':item['submitted_at'],'submitted_at':item['submitted_at'],
+                'team_id':item['team_id'],'batch_id':item['batch_id'],'prompt':item['prompt'],'message':item['prompt'],'target':item['target'],
+                'error':'This request was interrupted before its outcome was saved.' if interrupted else 'This request is still processing.',
+                'ai_fallback_reason':'request_interrupted' if interrupted else 'request_processing','ai_retry_after_seconds':0,
+                'request_status':'interrupted' if interrupted else 'processing','provider_details':{'request_id':item['request_id'],'lease_until':item['lease_until']}})
         return {'session':snapshot(engine,row,event),'messages':engine.prompt_history,'quality_audit':audit,'failed_requests':failed,
             'timeline_attempts':[dict(item) for item in conn.execute('SELECT * FROM timeline_attempts WHERE session_id=? ORDER BY id',(session_id,))],
             'word_answers':[dict(item) for item in conn.execute('SELECT * FROM word_answers WHERE session_id=? ORDER BY id',(session_id,))]}

@@ -127,8 +127,30 @@ class PostgresMigrationTests(unittest.TestCase):
         self.assertFalse(any('SELECT * FROM game_sessions' in query for query in queries))
         full = service.get_state(self.team['team_token'])
         self.assertEqual(len(full['prompt_history']), 2)
+        from export_xlsx import export_batch
+        import io
+        from openpyxl import load_workbook
+        exported,batch_id=export_batch('morning')
+        self.assertEqual(batch_id,'morning')
+        workbook=load_workbook(io.BytesIO(exported))
+        self.assertEqual(workbook['Prompts'].max_row,3)
         service.end_event()
         self.assertEqual(len(service.admin_detail(self.session_id)['messages']), 2)
+
+    def test_worker_schema_check_does_not_block_live_game_readers(self):
+        import concurrent.futures
+        migrate(self.source)
+        reader=logger_db.connect()
+        reader.execute('SELECT * FROM teams').fetchall()
+        reader.execute('SELECT * FROM game_sessions').fetchall()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            check=executor.submit(logger_db.init_db)
+            try:
+                # A schema check during another worker's active read must not
+                # request ALTER TABLE locks on already migrated game tables.
+                check.result(timeout=2)
+            finally:
+                reader.close()
 
 
 if __name__ == '__main__':

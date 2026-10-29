@@ -20,6 +20,9 @@ _pool_pid = None
 _pool_url = None
 _pool_lock = threading.Lock()
 SCHEMA_LOCK = 26002601
+# Bump this when a schema migration is added. Worker restarts must not run DDL
+# against tables that other ready workers are reading.
+SCHEMA_VERSION = 3
 DATABASE_ERRORS = (sqlite3.OperationalError,)
 if psycopg is not None:
     DATABASE_ERRORS += (psycopg.OperationalError, PoolClosed, PoolTimeout, TooManyRequests)
@@ -173,10 +176,16 @@ def init_db():
     with connect() as conn:
         if conn.postgres:
             conn.execute('SELECT pg_advisory_xact_lock(?)', (SCHEMA_LOCK,))
+            has_meta=conn.execute("SELECT to_regclass('schema_meta')").fetchone()[0] is not None
         else:
             conn.execute('PRAGMA journal_mode=WAL')
             conn.execute('PRAGMA foreign_keys=OFF')
             conn.execute('BEGIN IMMEDIATE')
+            has_meta=conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_meta'").fetchone() is not None
+        if has_meta:
+            version=conn.execute('SELECT version FROM schema_meta WHERE id=1').fetchone()
+            if version and version['version']>=SCHEMA_VERSION:
+                return
         real = 'DOUBLE PRECISION' if conn.postgres else 'REAL'
         audit_id = 'BIGSERIAL PRIMARY KEY' if conn.postgres else 'INTEGER PRIMARY KEY AUTOINCREMENT'
         statements = [
@@ -210,6 +219,10 @@ def init_db():
             f'''CREATE TABLE IF NOT EXISTS failed_requests(id {audit_id},session_id TEXT NOT NULL REFERENCES game_sessions(session_id),
                 team_id TEXT NOT NULL,batch_id TEXT NOT NULL,submitted_at {real} NOT NULL,prompt TEXT NOT NULL,
                 target TEXT,error TEXT NOT NULL,reason TEXT NOT NULL,retry_seconds INTEGER NOT NULL,details TEXT NOT NULL)''',
+            f'''CREATE TABLE IF NOT EXISTS prompt_requests(request_id TEXT PRIMARY KEY,session_id TEXT NOT NULL REFERENCES game_sessions(session_id),
+                team_id TEXT NOT NULL,batch_id TEXT NOT NULL,submitted_at {real} NOT NULL,prompt TEXT NOT NULL,target TEXT,
+                status TEXT NOT NULL,lease_until {real} NOT NULL,completed_at {real},details TEXT NOT NULL)''',
+            'CREATE INDEX IF NOT EXISTS prompt_requests_session ON prompt_requests(session_id,submitted_at)',
         ]
         for statement in statements:
             conn.execute(statement)
@@ -235,3 +248,5 @@ def init_db():
                 conn.execute('ALTER TABLE teams_batch_migration RENAME TO teams')
         conn.execute('DROP INDEX IF EXISTS teams_name_ci')
         conn.execute('CREATE UNIQUE INDEX IF NOT EXISTS teams_batch_name_ci ON teams(batch_id,LOWER(team_name))')
+        conn.execute('CREATE TABLE IF NOT EXISTS schema_meta(id INTEGER PRIMARY KEY CHECK(id=1),version INTEGER NOT NULL)')
+        conn.execute('INSERT INTO schema_meta(id,version) VALUES(1,?) ON CONFLICT(id) DO UPDATE SET version=excluded.version',(SCHEMA_VERSION,))

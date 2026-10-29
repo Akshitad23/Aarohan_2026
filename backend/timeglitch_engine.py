@@ -9,8 +9,8 @@ from datetime import datetime, timedelta
 from ciphers import PROTOCOLS, clue_for, get_challenge, technique_groups
 from ai_client import get_chronos_response
 
-ROUND_SECONDS = 600
-ROUND2_SECONDS = max(60, int(os.getenv("ROUND2_SECONDS", "600")))
+ROUND1_SECONDS = 300
+ROUND2_SECONDS = max(60, int(os.getenv("ROUND2_SECONDS", "900")))
 MAX_TIMELINE_ATTEMPTS = 3
 SPACE_MILESTONES = [
     {"id": "event-1", "year": 1959, "title": "Luna 1 Moon Flyby", "agency": "Soviet Space Program", "description": "The first spacecraft to escape Earth's gravity and pass the Moon."},
@@ -50,7 +50,7 @@ class TimeglitchSession:
         self.challenge = get_challenge(team_id)
         self.round1_started, self.round1_completed, self.round1_timed_out = True, False, False
         self.round1_status = "running"
-        self.round1_remaining_seconds, self.round1_elapsed_seconds = 600.0, 0.0
+        self.round1_remaining_seconds, self.round1_elapsed_seconds = float(ROUND1_SECONDS), 0.0
         self.round1_attempts, self.round1_score = 0, 0
         cards = [{**m, "id": str(uuid.uuid4())} for m in SPACE_MILESTONES]
         self.correct_order = [card["id"] for card in cards]
@@ -80,8 +80,8 @@ class TimeglitchSession:
         now = datetime.now()
         if not self.round2_started:
             elapsed = max(0.0, (now - self.start_time).total_seconds())
-            self.round1_elapsed_seconds = min(600.0, elapsed)
-            self.round1_remaining_seconds = max(0.0, 600.0 - elapsed)
+            self.round1_elapsed_seconds = min(float(ROUND1_SECONDS), elapsed)
+            self.round1_remaining_seconds = max(0.0, ROUND1_SECONDS - elapsed)
             if self.round1_remaining_seconds <= 0:
                 self.handle_round1_timeout()
         if self.round2_started and not self.is_finished:
@@ -116,9 +116,9 @@ class TimeglitchSession:
         if self.round2_started:
             return
         self.round1_timed_out, self.round1_status = True, "timed_out"
-        self.round1_remaining_seconds, self.round1_elapsed_seconds = 0.0, 600.0
+        self.round1_remaining_seconds, self.round1_elapsed_seconds = 0.0, float(ROUND1_SECONDS)
         self.round1_score = 0
-        self.start_round2(self.start_time + timedelta(seconds=ROUND_SECONDS))
+        self.start_round2(self.start_time + timedelta(seconds=ROUND1_SECONDS))
 
     def start_round2(self, started_at=None):
         if not self.round2_started:
@@ -134,12 +134,25 @@ class TimeglitchSession:
         return None
 
     def _prompt_target(self, prompt):
-        first = bool(re.search(r"\b(word one|first (?:encrypted |archive )?word|word 1|word a|fragment one|first fragment)\b", prompt)) or self.challenge["words"][0]["ciphertext"].lower() in prompt
-        second = bool(re.search(r"\b(word two|second (?:encrypted |archive )?word|word 2|word b|fragment two|second fragment)\b", prompt)) or self.challenge["words"][1]["ciphertext"].lower() in prompt
+        def contains_ciphertext(word):
+            return bool(re.search(r"(?<![a-z0-9])" + re.escape(word["ciphertext"].lower()) + r"(?![a-z0-9])", prompt))
+        first = bool(re.search(r"\b(word one|first (?:encrypted |archive )?word|word 1|word a|fragment one|first fragment)\b", prompt)) or contains_ciphertext(self.challenge["words"][0])
+        second = bool(re.search(r"\b(word two|second (?:encrypted |archive )?word|word 2|word b|fragment two|second fragment)\b", prompt)) or contains_ciphertext(self.challenge["words"][1])
         return "word1" if first and not second else "word2" if second and not first else None
 
     @staticmethod
     def detect_techniques(prompt):
+        prompt = prompt.lower().replace("\u2019", "'")
+        prompt = re.sub(r"```.*?```|`[^`]*`|\"[^\"]*\"|(?<!\w)'[^'\n]+'(?!\w)", " ", prompt, flags=re.S)
+        prompt = re.sub(r"\b(?:what does|what do|meaning of|define|explain (?:the )?(?:phrase|term))\b[^.?!\n]{0,200}", " ", prompt)
+
+        def affirmative(pattern):
+            for match in re.finditer(pattern, prompt, re.S):
+                prefix = prompt[max(0, match.start() - 70):match.start()]
+                if not re.search(r"\b(?:do not|don't|dont|never|avoid|without|not)\s+(?:[a-z]+\s+){0,4}$", prefix):
+                    return True
+            return False
+
         patterns = {
             "override": r"\b(ignore|disregard|bypass|override|forget|replace|drop)\b.{0,65}\b(instructions?|rules?|restrictions?|refusal|programming|directives?|protocols?)\b",
             "roleplay": r"\b(act as|pretend|roleplay|take the role|you are now)\b.{0,65}\b(tutor|teacher|expert|mentor|historian|engineer|terminal|assistant|professor|guardian)\b",
@@ -147,8 +160,8 @@ class TimeglitchSession:
             "authority": r"\b(i am|i'm|im|as your|authorized by|official request from)\b.{0,45}\b(admin|administrator|teacher|supervisor|examiner|developer|coordinator|owner|officer)\b|\bi have\b.{0,25}\b(clearance|authorization)\b",
             "fiction": r"\b(in a story|for a novel|fictional|hypothetically|hypothetical scenario|imagine a|in a simulation|what if this were)\b",
         }
-        found = [name for name, pattern in patterns.items() if re.search(pattern, prompt, re.S)]
-        hypothesis = (re.search(r"\b(hypothesis|i think|i suspect|i tested|i tried|check whether|test whether)\b", prompt)
+        found = [name for name, pattern in patterns.items() if affirmative(pattern)]
+        hypothesis = (affirmative(r"\b(hypothesis|i think|i suspect|i tested|i tried|check whether|test whether)\b")
                       and re.search(r"\b(check|test|verify|compare|confirm|explain)\b", prompt)
                       and re.search(r"\b(alphabet|letters?|positions?|substitution|reverse|shift|mirror|numbers?|rotate|interleave|rearrange|transposition|pairs?)\b", prompt))
         if hypothesis:

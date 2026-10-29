@@ -26,6 +26,8 @@ services:
         value: "1"
       - key: WEB_THREADS
         value: "8"
+      - key: ROUND2_SECONDS
+        value: "900"
       - key: GROQ_RPM_LIMIT
         value: "30"
       - key: GROQ_TPM_LIMIT

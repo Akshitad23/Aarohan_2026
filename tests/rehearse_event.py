@@ -92,20 +92,31 @@ def run(team_count, database_url=None):
             with concurrent.futures.ThreadPoolExecutor(max_workers=team_count) as executor:
                 return list(executor.map(function, items))
 
-        try:
-            ready = False
-            for _ in range(150):
+        def wait_ready():
+            deadline=time.monotonic()+25
+            pending=set(bases)
+            while pending and time.monotonic()<deadline:
                 if any(process.poll() is not None for process in processes):
-                    raise RuntimeError('Rehearsal server exited before startup.')
-                try:
-                    # Both processes must accept requests against the same DB.
-                    for _ in bases:
-                        call('/api/health')
-                    ready = True
-                    break
-                except (urllib.error.URLError, ConnectionError):
-                    time.sleep(0.1)
-            assert ready, 'Rehearsal server did not become healthy.'
+                    raise RuntimeError('Rehearsal server exited before becoming ready.')
+                for base in list(pending):
+                    try:
+                        with urllib.request.urlopen(base+'/api/health',timeout=3) as response:
+                            content=json.load(response)
+                            assert response.status==200 and content['storage']==('postgres' if database_url else 'sqlite')
+                            pending.remove(base)
+                    except urllib.error.HTTPError as error:
+                        # Retry only readiness failures during startup. Every
+                        # game request below must return its exact status.
+                        if error.code!=503:
+                            raise
+                    except (urllib.error.URLError,ConnectionError,TimeoutError):
+                        pass
+                if pending:
+                    time.sleep(.1)
+            assert not pending,'Rehearsal servers did not become ready within 25 seconds.'
+
+        try:
+            wait_ready()
             assert call('/api/health')['storage'] == ('postgres' if database_url else 'sqlite')
             call('/api/admin/log', expected=401)
             registrations = parallel(lambda index: call('/api/teams/register', {
@@ -120,7 +131,7 @@ def run(team_count, database_url=None):
             started = call('/api/admin/event/start', {}, admin=admin)['event']['started_at']
             assert call('/api/admin/event/start', {}, admin=admin)['event']['started_at'] == started
             states = parallel(lambda token: call('/api/tg/session/status', token=token), tokens)
-            assert all(state['round1']['deadline'] == started + 600 for state in states)
+            assert all(state['round1']['deadline'] == started + 300 for state in states)
 
             def timeline(item):
                 index, token = item
@@ -198,14 +209,8 @@ def run(team_count, database_url=None):
             for process in processes:
                 stop(process)
             processes = launch()
-            for _ in range(150):
-                try:
-                    restored = call('/api/tg/session/status', token=tokens[0])
-                    break
-                except (urllib.error.URLError, ConnectionError):
-                    time.sleep(0.1)
-            else:
-                raise AssertionError('Restart recovery failed.')
+            wait_ready()
+            restored=call('/api/tg/session/status',token=tokens[0])
             assert restored['total_score'] == 9.5 and restored['quality_status'] == 'reviewed'
             ordered = sorted(timings)
             return {'teams': team_count, 'worker_processes': 2, 'threads_per_worker': 8,

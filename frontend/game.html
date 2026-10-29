@@ -40,7 +40,7 @@
         <div class="eyebrow">
           WAITING ROOM
         </div>
-        <h1>
+        <h1 id="waitingHeading" tabindex="-1">
           Your team is ready
         </h1>
         <p>
@@ -49,10 +49,18 @@
         <div class="scorebar">
           <div class="score">
             <strong>
-              10 min
+              5 min
             </strong>
             <span>
               Round 1
+            </span>
+          </div>
+          <div class="score">
+            <strong>
+              15 min
+            </strong>
+            <span>
+              Round 2
             </span>
           </div>
           <div class="score">
@@ -82,17 +90,17 @@
             <div class="eyebrow">
               ROUND 1 / 2 MARKS
             </div>
-            <h1>
+            <h1 id="round1Heading" tabindex="-1">
               Repair the timeline
             </h1>
           </div>
           <div class="timer" id="round1Timer" aria-label="Round 1 time remaining">
-            10:00
+            05:00
           </div>
         </div>
         <div class="panel">
           <p>
-            Arrange the events from earliest to latest. You have up to three attempts. A correct order earns 2 marks and opens Round 2 immediately.
+            Arrange the events from earliest to latest. You have five minutes and up to three attempts. A correct order earns 2 marks and opens Round 2 immediately.
           </p>
           <div class="row between">
             <span id="attempts" class="badge">
@@ -112,7 +120,7 @@
             </button>
           </div>
           <p class="muted">
-            After three unsuccessful attempts or ten minutes, you continue to Round 2 with 0 marks for this round.
+            After three unsuccessful attempts or five minutes, you continue to Round 2 with 0 marks for this round.
           </p>
         </div>
       </section>
@@ -122,16 +130,17 @@
             <div class="eyebrow">
               ROUND 2 / 8 MARKS
             </div>
-            <h1>
+            <h1 id="round2Heading" tabindex="-1">
               Recover the two words
             </h1>
           </div>
           <div class="timer" id="round2Timer" aria-label="Round 2 time remaining">
-            10:00
+            15:00
           </div>
         </div>
         <div id="round1Outcome" class="message">
         </div>
+        <p class="muted">You have fifteen minutes to obtain the cipher hints and submit both decoded words.</p>
         <div class="game-grid">
           <section class="panel">
             <div class="row between">
@@ -220,7 +229,7 @@
         <div class="eyebrow">
           MISSION COMPLETE
         </div>
-        <h1>
+        <h1 id="finishedHeading" tabindex="-1">
           Your results are recorded
         </h1>
         <p id="finishMessage">

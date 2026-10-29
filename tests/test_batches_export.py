@@ -150,5 +150,28 @@ class BatchTests(unittest.TestCase):
                 conn.execute("INSERT INTO teams(team_id,team_name,school_name,participants,registered_at,token_hash,batch_id) VALUES('new','LEGACY','School','[]',1,'new-token-hash','afternoon')")
                 self.assertEqual(conn.execute('SELECT COUNT(*) FROM teams').fetchone()[0],2)
 
+    def test_export_uses_one_snapshot_during_a_concurrent_grade(self):
+        team=self.register()
+        service.end_event()
+        engine=self.engine(team)
+        original=service.admin_detail
+        graded=False
+        def detail_with_concurrent_review(session_id,connection=None):
+            nonlocal graded
+            if not graded:
+                graded=True
+                with logger_db.transaction() as writer:
+                    service.write_review(writer,session_id,4,'Concurrent review during workbook export.')
+            return original(session_id,connection=connection)
+        with patch.object(service,'admin_detail',side_effect=detail_with_concurrent_review):
+            payload,_=export_batch('morning')
+        book=load_workbook(io.BytesIO(payload))
+        headers=[cell.value for cell in book['Summary'][1]]
+        row=[cell.value for cell in book['Summary'][2]]
+        self.assertIsNone(row[headers.index('quality_score')])
+        self.assertIsNone(row[headers.index('final_score')])
+        self.assertEqual(book['ReviewAudit'].max_row,1)
+        self.assertEqual(service.get_state(team['team_token'])['final_score'],4)
+
 if __name__=='__main__':
     unittest.main(verbosity=2)

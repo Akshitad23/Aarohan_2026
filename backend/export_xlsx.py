@@ -57,13 +57,15 @@ def sheet(book,name,headers,rows):
 
 
 def export_batch(batch_id=None):
-    summary=service.admin_sessions(batch_id)
-    batch_id=summary['event']['batch_id']
     with connect() as conn:
+        # Every sheet uses one database snapshot, including simultaneous grades.
+        conn.execute('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY' if conn.postgres else 'BEGIN')
+        summary=service.admin_sessions(batch_id,connection=conn)
+        batch_id=summary['event']['batch_id']
         teams=[service.team_dict(row,True) for row in conn.execute('SELECT * FROM teams WHERE batch_id=? ORDER BY registered_at',(batch_id,))]
+        details=[service.admin_detail(row['session_id'],connection=conn) for row in summary['sessions']]
     book=Workbook()
     book.remove(book.active)
-    details=[service.admin_detail(row['session_id']) for row in summary['sessions']]
     grade_rows=[]
     for row,detail in zip(summary['sessions'],details):
         row['quality_reason']=detail['session'].get('quality_reason')
@@ -96,7 +98,7 @@ def export_batch(batch_id=None):
                 'provider':turn.get('ai_provider',turn.get('provider')),'technique':turn.get('technique',turn.get('detected_technique')),
                 'clue_unlocked':turn.get('clue_unlocked'),'quality_status':row['quality_status'],'details':turn})
         for failure in detail['failed_requests']:
-            prompts.append({**common,'request_status':'failed','timestamp_utc':utc(failure['timestamp']),'target':failure.get('target'),
+            prompts.append({**common,'request_status':failure.get('request_status','failed'),'timestamp_utc':utc(failure['timestamp']),'target':failure.get('target'),
                 'prompt':failure['prompt'],'response':failure['error'],'provider':failure['provider_details'].get('ai_provider'),
                 'error_reason':failure['ai_fallback_reason'],'retry_after_seconds':failure['ai_retry_after_seconds'],'details':failure['provider_details']})
         for attempt in detail['timeline_attempts']:

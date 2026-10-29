@@ -30,7 +30,7 @@ Morning and Afternoon have separate registrations, starts, deadlines, results, r
 
 1. Select Morning in admin and open its registration. Teams register and wait in the lobby.
 2. Check the roster and start Morning once. All registered teams receive the same timeline deadline.
-3. Round one allows ten minutes and three attempts. Success earns 2 marks and opens round two immediately. Exhausted attempts or expiry opens round two with 0 timeline marks.
+3. Round one allows five minutes and three attempts. Success earns 2 marks and opens round two immediately. Exhausted attempts or expiry opens round two with 0 timeline marks. Round two lasts fifteen minutes per team.
 4. Each decoded word earns 2 marks. Prompt quality stays pending. Admin shows objective marks out of 6 until review supplies the remaining 4 marks.
 5. End Morning and download its full Excel workbook.
 6. Activate Afternoon registration and repeat. This preserves Morning.
@@ -65,3 +65,5 @@ Check registration, lobby, admin authentication, simultaneous start, all timelin
 Keep rehearsal data on a child Neon branch. Never delete a competition database to reset the game. To preserve a local event, use `backend/backup_event.py`, then import into an empty target with `backend/migrate_sqlite.py`. The importer refuses to overwrite an event.
 
 [The verification record](docs/VERIFICATION.md) distinguishes completed checks from cloud and venue checks that remain pending.
+
+The latest audit and remaining release work are in [the readiness checklist](docs/READINESS.md). A private balanced competition catalog has been prepared locally under the ignored `backend/private/` folder. It has not been uploaded or activated.

@@ -40,8 +40,8 @@ Incremental transcripts reduce both Neon-to-server and server-to-browser transfe
 
 ## Rules used where the request leaves a choice
 
-- Round one starts at the admin's shared event start, lasts 600 seconds, and permits at most three complete submissions. A correct timeline earns 2 on any permitted attempt. There is no speed or attempt penalty.
-- Each team gets 600 seconds for round two from the time it advances. The request permits early progression, so a team that solves round one early can finish earlier. All teams receive the same round-two duration. Both sessions use this same timing rule.
+- Round one starts at the admin's shared event start, lasts 300 seconds, and permits at most three complete submissions. A correct timeline earns 2 on any permitted attempt. There is no speed or attempt penalty.
+- Each team gets 900 seconds for round two from the time it advances. The request permits early progression, so a team that solves round one early can finish earlier. All teams receive the same round-two duration. Both sessions use this same timing rule.
 - Teams can reach round two even with 0 in round one.
 - Decoding earns marks only through the separate answer submission fields. A chatbot response cannot award decoding marks.
 - Automatic prompt-quality marks are removed. After its event session ends, a judge reviews the full transcript and records a score with a reason. The Excel grading template can be validated and imported atomically through grade_reviews.py.
