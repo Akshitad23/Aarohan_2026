@@ -26,7 +26,7 @@ The Neon project created for this event is `aarohan-2026`, ID `long-resonance-44
 
 ## Run both sessions
 
-Morning and Afternoon have separate registrations, starts, deadlines, results, reviews, and exports. A team's access stays attached to its registered session.
+Test, Morning and Afternoon have separate registrations, starts, deadlines, results, reviews and exports. Test uses public rehearsal ciphers and is excluded from competition sessions. End Test and activate Morning before opening competition registration. A team's access stays attached to its registered session.
 
 1. Select Morning in admin and open its registration. Teams register and wait in the lobby.
 2. Check the roster and start Morning once. All registered teams receive the same timeline deadline.

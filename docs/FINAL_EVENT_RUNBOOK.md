@@ -55,7 +55,24 @@ The configured local AI uses Ollama when Groq is blank. To test the Groq path lo
 
 ## 3. Before each event session
 
-Do these checks before Morning, then repeat them before Afternoon:
+### Test with the venue computers before Morning
+
+Use the Render site or the prepared laptop-hosted app, but keep everyone on one URL throughout the test. Test is a persistent, separate session. It uses the public rehearsal ciphers, not the private competition catalog.
+
+1. On the admin laptop, sign in and select **Test** in the session dropdown. Click **Open registration for this session**.
+2. On the two venue computers, open the team page and register two clearly fake teams, such as `VENUE TEST A` and `VENUE TEST B`. Do not use real student details.
+3. Confirm both teams appear in the Test roster. Click **Start Test for all teams** once. Confirm both computers leave the waiting room and begin Round 1: Part A.
+4. From the team computers, check the timeline, Part B, chatbot response, answer submission and resume code. Test hints use only the public rehearsal puzzles, so they do not reveal competition answers.
+5. When satisfied, select **Test** in admin and click **End Test**. Test is closed and cannot be reopened. Its teams, prompts, scores and export remain under Test, separate from Morning and Afternoon.
+6. Select **Morning** and click **Open registration for this session**. Confirm admin and the registration page show **Morning / Waiting for teams** before inviting competitors.
+7. Participant browsers that registered a Test team keep that private Test code in local storage. In the same browser, register the real Morning team using its own details; the site will warn that this replaces the saved Test access. Or open a clean InPrivate profile. Do not resume a Test code as a Morning team.
+8. Confirm the Morning roster contains only competition teams. Start Morning once all teams are ready.
+
+If the test fails, do not start Morning. Check the admin error, public health page, Wi-Fi and laptop fallback first. If the Test session was already ended, fix the issue and rehearse on the isolated local SQLite setup in section 2; do not try to reopen Test on the competition database.
+
+### Checks before Morning and Afternoon
+
+Do these checks before Morning, then repeat the service and roster checks before Afternoon:
 
 1. In Render, confirm the service is live. Open `https://ai-think-hack-create.onrender.com/api/health` and verify `status: ok` and `storage: postgres`. If the page is waking from sleep, allow about a minute.
 2. Sign in at `https://ai-think-hack-create.onrender.com/admin-login`. Confirm the correct session is selected and check provider configuration and remaining budget.
@@ -64,7 +81,7 @@ Do these checks before Morning, then repeat them before Afternoon:
 5. Confirm the organizer laptop has power, `backend/.env.event`, the private catalog, Ollama and `gemma3:4b`. The laptop fallback preflight should pass. Test `start_event_fallback.bat` from a second device on the same Wi-Fi before participants arrive, then close the rehearsal server.
 6. Check the actual Groq organization limits in its console. Groq limits apply at the organization level. Its policy prohibits registering multiple accounts or orchestrating organizations to get around limits. Do not rotate through accounts to bypass 429s. The app is paced for the configured budget and the laptop has local Ollama backup. See [Groq's rate limits](https://console.groq.com/docs/rate-limits) and [acceptable-use policy](https://console.groq.com/docs/legal/ai-policy).
 7. Check that the organizer has a private destination for two Excel exports, one per session. Exports contain participant information and full prompts.
-8. Select **Morning** or **Afternoon**, then open registration. Check the roster as teams join. Start once, after the teams for that session are ready.
+8. For Afternoon, select it only after Morning is ended and exported, then click **Open registration for this session**. Check the roster as teams join. Start once, after the teams for that session are ready.
 
 ## 4. Session procedure and marks
 

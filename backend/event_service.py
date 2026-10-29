@@ -30,7 +30,7 @@ def event_state(conn, batch_id=None):
             'started_at': row['started_at'], 'ended_at': row['ended_at']}
 
 def list_batches(conn):
-    return [event_state(conn, row['batch_id']) for row in conn.execute("SELECT batch_id FROM event_sessions ORDER BY CASE WHEN batch_id='morning' THEN 0 ELSE 1 END,batch_id")]
+    return [event_state(conn, row['batch_id']) for row in conn.execute("SELECT batch_id FROM event_sessions ORDER BY CASE batch_id WHEN 'test' THEN 0 WHEN 'morning' THEN 1 WHEN 'afternoon' THEN 2 ELSE 3 END,batch_id")]
 
 def team_dict(row, private=False):
     result = {'team_id': row['team_id'], 'team_name': row['team_name'], 'school_name': row['school_name'],
@@ -71,7 +71,7 @@ def register(data):
             raise EventError('That team name is already registered. Resume with your team token.', 409)
         conn.execute('INSERT INTO teams(team_id,team_name,school_name,participants,registered_at,token_hash,batch_id) VALUES(?,?,?,?,?,?,?)',
                      (team_id, name, school, json.dumps(clean), time.time(), digest(token),batch_id))
-        engine = TimeglitchSession(team_id, name)
+        engine = TimeglitchSession(team_id, name, batch_id=batch_id)
         conn.execute('INSERT INTO game_sessions(session_id,team_id,state) VALUES(?,?,?)',
                      (engine.session_id, team_id, json.dumps(engine.to_storage())))
         row = conn.execute('SELECT * FROM teams WHERE team_id=?', (team_id,)).fetchone()
@@ -363,7 +363,7 @@ def end_event(batch_id=None):
 
 def activate_batch(batch_id):
     if not isinstance(batch_id,str) or not batch_id:
-        raise EventError('Choose Morning or Afternoon.')
+        raise EventError('Choose an event session.')
     with transaction() as conn:
         current, target = event_state(conn), event_state(conn,batch_id)
         if current['batch_id'] == target['batch_id']:

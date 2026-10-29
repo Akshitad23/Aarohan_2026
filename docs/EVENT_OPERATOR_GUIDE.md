@@ -4,7 +4,7 @@
 
 Flask serves the team pages and API from one site. On the hosted version, Render runs the app and Neon Postgres stores event data. On a Windows laptop, the app can use SQLite for local development. The server owns registration, session selection, clocks, timeline attempts, cipher hints, answer checks and objective marks.
 
-Teams register for either Morning or Afternoon. Each team receives a private resume code and waits until an organizer starts that session. Starting a session starts the five-minute timeline part for every registered team at once. A correct order earns 2 marks and moves that team straight to the 15-minute prompt-engineering part. Three wrong attempts or the five-minute deadline also moves the team forward, without the 2 timeline marks. In the prompt part, teams ask the chatbot for hints about two words, decode them and submit each answer. Each correct word earns 2 marks.
+Teams register for Test, Morning or Afternoon. Test is a separate venue rehearsal using public rehearsal ciphers; it never receives the private competition catalog. Test data, Morning results and Afternoon results stay in separate sessions. Each team receives a private resume code and waits until an organizer starts that session. Starting a session starts the five-minute timeline part for every registered team at once. A correct order earns 2 marks and moves that team straight to the 15-minute prompt-engineering part. Three wrong attempts or the five-minute deadline also moves the team forward, without the 2 timeline marks. In the prompt part, teams ask the chatbot for hints about two words, decode them and submit each answer. Each correct word earns 2 marks.
 
 The dashboard shows timeline and word marks, up to 6. The remaining 4 marks come from the prompt-quality review after a session ends. The app saves prompts, replies, failed AI requests and submissions for organizers to review and export. The chatbot does not assign prompt-quality marks.
 
@@ -39,7 +39,7 @@ When the service is available, check `/api/health` and confirm that storage repo
 1. Confirm the correct deployment URL and that `/api/health` reports Postgres for the hosted event.
 2. Sign in to the admin page. Check the AI status and remaining budget. A configured key is not proof of a successful live reply; run a team rehearsal prompt and check its response.
 3. Verify the private competition catalog is active. It is configured in Render as the masked `CIPHER_CATALOG_JSON` environment variable. Do not paste its contents into a student-facing page or public repository.
-4. Select Morning or Afternoon and open registration for that session. Do not use an old team's resume code for a different session.
+4. Before Morning, use the Test session for the venue rehearsal in [the final runbook](FINAL_EVENT_RUNBOOK.md). End Test, select Morning, and click **Open registration for this session** before inviting competition teams. For the second competition session, select Afternoon after ending and exporting Morning. A resume code belongs to its original session; registering for a new session creates new access.
 5. As competition teams register, confirm their names, schools, participant counts and waiting status in admin. Use the isolated local rehearsal for fake teams; do not add a test team to the live session.
 6. Start the session once, when all teams are ready. This starts the five-minute timeline clock for all registered teams together. Tell teams that the server clock continues if they refresh or leave the tab.
 7. Confirm the organizer can see the live roster and objective marks. Avoid restarting or changing deployment settings during play.
@@ -52,7 +52,7 @@ If Render is unavailable for more than two minutes, start `start_event_fallback.
 
 If the website works but Groq is unavailable, the fallback app on the organizer laptop can use the configured local Ollama model. If the current API key is invalid or revoked, replace it with a valid key. A new key in the same Groq organization does not fix an organization rate limit or outage. The local Ollama path is the prepared no-cost alternative; it must be warmed and rehearsed before the event. If both model providers fail, stop prompting temporarily and tell the organizer. The game clock does not pause automatically. If Neon itself is unreachable, stop play and record the remaining work offline; do not switch to SQLite because it would split the event records.
 
-The event uses separate Morning and Afternoon records. Before opening the second session, end the first session in admin and export its results. Then select Afternoon and open its registration. Morning registrations and results remain attached to Morning.
+Test, Morning and Afternoon each have separate records. Test is for the pre-event venue check only. Before opening Afternoon, end Morning and export it. Then select Afternoon and open its registration. Morning registrations and results remain attached to Morning.
 
 ## After each session
 

@@ -114,10 +114,10 @@ def catalog():
     return result
 
 
-def get_challenge(team_id):
-    """Choose once, then persist the selected puzzle with the team's session."""
-    private_path = os.getenv("CIPHER_CATALOG_PATH", "").strip()
-    private_json = os.getenv("CIPHER_CATALOG_JSON", "").strip()
+def get_challenge(team_id, *, test_session=False):
+    """Choose once; the venue Test session must never use competition answers."""
+    private_path = "" if test_session else os.getenv("CIPHER_CATALOG_PATH", "").strip()
+    private_json = "" if test_session else os.getenv("CIPHER_CATALOG_JSON", "").strip()
     if private_path and private_json:
         raise ValueError("Set either CIPHER_CATALOG_PATH or CIPHER_CATALOG_JSON, not both")
     challenges = catalog()

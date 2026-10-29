@@ -43,11 +43,11 @@ def evaluate_prompt(prompt, prompt_history=None):
 
 
 class TimeglitchSession:
-    def __init__(self, team_id, team_name):
+    def __init__(self, team_id, team_name, batch_id=None):
         self.session_id = str(uuid.uuid4())
         self.team_id, self.team_name = team_id, team_name
         self.start_time = datetime.now()
-        self.challenge = get_challenge(team_id)
+        self.challenge = get_challenge(team_id, test_session=batch_id == 'test')
         self.round1_started, self.round1_completed, self.round1_timed_out = True, False, False
         self.round1_status = "running"
         self.round1_remaining_seconds, self.round1_elapsed_seconds = float(ROUND1_SECONDS), 0.0

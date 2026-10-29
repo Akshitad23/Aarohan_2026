@@ -62,6 +62,44 @@ class BatchTests(unittest.TestCase):
         service.end_event('afternoon')
         self.assertEqual(service.get_state(morning['team_token'])['objective_score'],2)
 
+    def test_venue_test_session_is_separate_then_morning_can_open(self):
+        with logger_db.connect() as conn:
+            self.assertEqual([(item['batch_id'],item['name']) for item in service.list_batches(conn)],
+                             [('test','Test'),('morning','Morning'),('afternoon','Afternoon')])
+        service.activate_batch('test')
+        rehearsal=self.register('Practice team','test')
+        service.start_event('test')
+        service.end_event('test')
+        service.activate_batch('morning')
+        competition=self.register('Practice team','morning')
+        self.assertEqual(service.admin_sessions('test')['total'],1)
+        self.assertEqual(service.admin_sessions('morning')['total'],1)
+        self.assertEqual(service.get_state(rehearsal['team_token'])['event']['batch_id'],'test')
+        self.assertEqual(service.get_state(competition['team_token'])['event']['batch_id'],'morning')
+
+    def test_test_session_uses_public_rehearsal_ciphers_not_private_competition_catalog(self):
+        private=[{'id':'competition','words':[{'answer':'PRIVATE','protocol':'caesar','key':2},{'answer':'ANSWERS','protocol':'atbash'}]}]
+        with patch.dict('os.environ',{'CIPHER_CATALOG_JSON':json.dumps(private),'CIPHER_CATALOG_PATH':''}):
+            service.activate_batch('test')
+            rehearsal=self.register('Rehearsal team','test')
+            service.end_event('test')
+            service.activate_batch('morning')
+            competition=self.register('Competition team','morning')
+        rehearsal_words=self.engine(rehearsal).challenge['words']
+        competition_words=self.engine(competition).challenge['words']
+        self.assertNotEqual([word['answer'] for word in rehearsal_words],['PRIVATE','ANSWERS'])
+        self.assertEqual([word['answer'] for word in competition_words],['PRIVATE','ANSWERS'])
+
+    def test_schema_v3_upgrade_adds_test_session_without_resetting_active_session(self):
+        with logger_db.connect() as conn:
+            conn.execute("DELETE FROM event_sessions WHERE batch_id='test'")
+            conn.execute('UPDATE schema_meta SET version=3 WHERE id=1')
+        logger_db.init_db()
+        with logger_db.connect() as conn:
+            self.assertEqual(conn.execute('SELECT version FROM schema_meta WHERE id=1').fetchone()['version'],4)
+            self.assertEqual(conn.execute("SELECT name FROM event_sessions WHERE batch_id='test'").fetchone()['name'],'Test')
+            self.assertEqual(conn.execute('SELECT active_batch_id FROM event WHERE id=1').fetchone()['active_batch_id'],'morning')
+
     def test_postevent_review_batch_validation_and_atomic_import(self):
         one,two=self.register('One'),self.register('Two')
         engine=self.engine(one)

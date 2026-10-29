@@ -52,7 +52,7 @@ function copyChecks() {
   console.log('UI copy: event name and Round 1 part labels are present on all pages.');
 }
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return {promise, resolve}; };
-const event = (batch_id, status) => ({batch_id, name:batch_id === 'morning' ? 'Morning' : 'Afternoon', status});
+const event = (batch_id, status) => ({batch_id, name:({test:'Test',morning:'Morning',afternoon:'Afternoon'})[batch_id] || batch_id, status});
 const state = (phase = 'round2', reviewed = false) => ({phase, event:event('morning','running'), team_id:'T1', team_name:'Test team', objective_score:4, quality_status:reviewed ? 'reviewed' : 'pending', final_score:reviewed ? 7 : null, total_score:reviewed ? 7 : 4, round1:{score:2,remaining_seconds:300}, round2:{remaining_seconds:900, prompt_count:0, quality_marks:reviewed ? 3 : null, words:[{index:1,ciphertext:'TEST',solved:true,score:2},{index:2,ciphertext:'OTHER',solved:false,score:0}]}, prompt_history:[]});
 
 async function gameChecks() {
@@ -134,18 +134,19 @@ async function registrationChecks() {
 
 async function adminChecks() {
   const test = page('admin.js', {admin:{token:'admin-test-token'}});
-  const batchList = [event('morning','ended'),event('afternoon','waiting')];
+  const batchList = [event('test','ended'),event('morning','ended'),event('afternoon','waiting')];
   const morningSession = {...state('finished'), event:event('morning','ended')};
   test.api.request = async route => {
-    if (route === '/api/event/status') return {event:batchList[1], batches:batchList};
+    if (route === '/api/event/status') return {event:batchList[2], batches:batchList};
     if (route === '/api/health') return {ai:{configured:true,ollama_backup_configured:true}};
-    if (route.startsWith('/api/admin/log')) { const morning = route.includes('morning'); return {event:batchList[morning ? 0 : 1], total:morning ? 1 : 0, sessions:morning ? [{session_id:'S1',team_id:'T1',phase:'finished',objective_score:4,quality_score:null,final_score:null,quality_status:'pending'}] : []}; }
+    if (route.startsWith('/api/admin/log')) { const morning = route.includes('morning'); return {event:batchList[morning ? 1 : 2], total:morning ? 1 : 0, sessions:morning ? [{session_id:'S1',team_id:'T1',phase:'finished',objective_score:4,quality_score:null,final_score:null,quality_status:'pending'}] : []}; }
     if (route.startsWith('/api/admin/teams')) return {teams:route.includes('morning') ? [{team_id:'T1',team_name:'Test team',school_name:'School',team_size:2,batch_id:'morning'}] : []};
     if (route.includes('/api/admin/session/')) return {session:morningSession, messages:[{turn:1,timestamp:'2026-10-29T10:00:00',prompt:'A successful prompt',response:'A provider response',ai_provider:'groq'}], failed_requests:[{id:1,timestamp:1793268001,prompt:'A failed prompt',error:'Both providers failed',provider_details:{reason:'provider_timeout'}}]};
     throw new Error(`Unexpected route: ${route}`);
   };
   test.run(); await settle();
   assert.match(test.get('eventState').textContent, /Afternoon/);
+  assert.equal(test.get('batchSelect').children.find(option => option.value === 'test')?.textContent, 'Test');
   test.get('batchSelect').value = 'morning'; test.get('batchSelect').onchange(); await settle();
   assert.equal(test.get('startEvent').hidden, true);
   assert.match(test.get('teamsTable').textContent, /Pending/);
