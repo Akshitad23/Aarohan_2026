@@ -12,7 +12,7 @@ All 12 cipher combinations round-trip. Each of the 72 eligible word/technique pa
 
 The gateway's eight focused tests cover authentication, its fixed local upstream, pinned model, bounded context and output, concurrency, invalid requests, and upstream errors.
 
-JavaScript syntax and `node tests/frontend_smoke.cjs` pass. The controller checks cover session selection, failed-request draft retention, provider identity, pending and reviewed marks, transcripts, and session-specific Excel downloads.
+JavaScript syntax and `node tests/frontend_smoke.cjs` pass. The controller checks cover session selection, failed-request draft retention, provider identity, pending and reviewed marks, transcripts, and session-specific Excel downloads. All four HTML pages have unique IDs and existing referenced assets. The pushed implementation passed [GitHub Actions](https://github.com/Akshitad23/Aarohan_2026/actions/runs/40929546254), including the Python suite, separate HTTP rehearsal, JavaScript syntax and controller checks.
 
 ## Forty-team rehearsal
 
@@ -39,6 +39,6 @@ The real local Ollama path also passed with the installed `gemma3:4b` model and 
 
 All four pages use the reference site's blue grid, cream paper, navy text, condensed headings and locally hosted font files. Legacy unused styles were removed. The current theme still needs visual browser checks at laptop and mobile widths because local browser control became disabled during setup.
 
-The authorized GitHub deployment copy and Neon Free Singapore project were created. Deployment configuration is prepared. Render service creation, the private Neon connection, cloud restart recovery, a public URL, and venue rehearsal remain unverified. The Render connector disappeared and local browser use became disabled before those account steps could be completed.
+The implementation was pushed to [the authorized GitHub deployment copy](https://github.com/Akshitad23/Aarohan_2026). A Neon Free Singapore project was created. Deployment configuration is prepared. Render service creation, the private Neon connection, cloud restart recovery, a public URL, and venue rehearsal remain unverified. The Render connector disappeared and local browser use became disabled before those account steps could be completed.
 
 The source catalog contains public rehearsal answers. Supply a fresh private competition catalog before ranked play.
