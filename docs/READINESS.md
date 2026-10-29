@@ -11,10 +11,11 @@ The application records objective marks out of 6. Prompt quality remains pending
 | Shared hosting | Render Free service is live at [ai-think-hack-create.onrender.com](https://ai-think-hack-create.onrender.com) | Open the service from the intended devices and rehearse its behavior |
 | Persistent database | Neon Free is connected; hosted health reports Postgres | Register an isolated rehearsal team, restart the service, and recover its access and marks |
 | API capacity | A real Groq request succeeded; 40-team live AI throughput is unverified | Rehearse sustained prompt traffic within the account's actual quota |
-| Optional Ollama backup | Real authenticated local reply succeeded; remote bridge is unfinished | Render reaches its HTTPS gateway, rejects missing credentials, and accepts a backup reply when Groq is unavailable |
+| Ollama backup | `gemma3:4b` returned a real reply through the app after a simulated Groq authentication failure | Confirm the local model is warm on event day; Render still has no remote Ollama gateway |
 | Competition puzzles | Twelve private pairs are configured in Render as masked `CIPHER_CATALOG_JSON` | Confirm a new rehearsal team receives the intended catalog after deployment |
 | Theme | All four pages use the reference theme; controller and static checks pass | Inspect laptop and narrow layouts, keyboard navigation, readable clocks and long messages in a real browser |
 | Session rehearsal | Isolated tests cover Morning and Afternoon | Rehearse both sessions on the actual deployment without touching the clean competition database |
+| Laptop fallback | Launcher, private configuration and read-only Neon preflight are ready; local health reports Postgres | Test from a second laptop on venue Wi-Fi and verify firewall access before event day |
 | Venue readiness | Not tested | Test the intended laptops and Wi-Fi, organizer login, both exports and provider failure behavior |
 | Result retention | Excel export and local SQLite backup tools exist | Keep each session's private workbook and a database backup in organizer-controlled storage |
 

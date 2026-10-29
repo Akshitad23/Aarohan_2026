@@ -44,6 +44,14 @@ When the service is available, check `/api/health` and confirm that storage repo
 6. Start the session once, when all teams are ready. This starts the five-minute timeline clock for all registered teams together. Tell teams that the server clock continues if they refresh or leave the tab.
 7. Confirm the organizer can see the live roster and objective marks. Avoid restarting or changing deployment settings during play.
 
+## If Render or the chatbot fails
+
+The organizer laptop can serve as the app host. It uses the same Neon production database, so teams keep their registration, clocks, prompts and scores when they switch URLs. The launcher refuses to start unless it can reach Neon and validate the private catalog. Prepare it before the event using [the Windows fallback instructions](WINDOWS_FALLBACK.md); do not wait for an outage to copy secrets or install a model.
+
+If Render is unavailable for more than two minutes, start `start_event_fallback.bat` on the wired, awake organizer laptop. Run `ipconfig`, find its Wi-Fi IPv4 address, then have every team and the admin open `http://<IPv4-address>:5000/` and sign in again if asked. Keep everyone on that one URL for the rest of the session. The laptop and venue Wi-Fi must allow inbound connections on port 5000. Never continue on a second local SQLite database.
+
+If the website works but Groq is unavailable, the fallback app on the organizer laptop can use the configured local Ollama model. If the current API key is invalid or revoked, replace it with a valid key. A new key in the same Groq organization does not fix an organization rate limit or outage. The local Ollama path is the prepared no-cost alternative; it must be warmed and rehearsed before the event. If both model providers fail, stop prompting temporarily and tell the organizer. The game clock does not pause automatically. If Neon itself is unreachable, stop play and record the remaining work offline; do not switch to SQLite because it would split the event records.
+
 The event uses separate Morning and Afternoon records. Before opening the second session, end the first session in admin and export its results. Then select Afternoon and open its registration. Morning registrations and results remain attached to Morning.
 
 ## After each session

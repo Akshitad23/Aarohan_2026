@@ -69,6 +69,8 @@ Run `start_station.bat`. It starts Waitress on Windows. Keep the server window o
 
 The supplied Blueprint targets Render Free with Neon Free and creates no paid disk or database service. Configure a private Neon pooled `DATABASE_URL`, admin password, and provider credentials in Render. Hosted startup refuses SQLite fallback so a redeploy cannot silently replace persistent event data with an ephemeral database.
 
+If Render is unavailable, the organizer can start the Windows laptop fallback against the same Neon database. Prepare the private credentials, catalog and Ollama model before event day; follow [the Windows fallback runbook](docs/WINDOWS_FALLBACK.md).
+
 Linux hosting uses Gunicorn. From `backend/`, its start command is:
 
 ```bash

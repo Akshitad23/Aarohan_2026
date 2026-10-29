@@ -15,6 +15,7 @@ secrets.yml
 secrets.json
 credentials.*
 !backend/.env.example
+!backend/event-fallback.example
 *.db
 *.db-wal
 *.db-shm

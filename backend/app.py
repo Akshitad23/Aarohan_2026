@@ -10,7 +10,7 @@ from pathlib import Path
 from flask import Flask, Response, jsonify, request, send_from_directory
 from dotenv import load_dotenv
 
-load_dotenv(Path(__file__).parent / '.env')
+load_dotenv(os.getenv('AAROHAN_ENV_FILE') or Path(__file__).parent / '.env')
 from logger_db import DATABASE_ERRORS, connect, init_db, storage_kind, transaction
 import event_service as service
 from ai_client import get_ai_status, init_client

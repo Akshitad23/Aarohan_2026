@@ -1,0 +1,24 @@
+# Copy this file to backend/.env.event on the organizer laptop. Keep it private.
+ADMIN_PASSWORD=
+GROQ_API_KEY=
+# Use the same production Neon pooled connection string as Render.
+DATABASE_URL=
+REQUIRE_DATABASE_URL=true
+DB_POOL_MAX=4
+WEB_THREADS=16
+GROQ_MODEL_PERSONA=openai/gpt-oss-120b
+GROQ_API_TIMEOUT=10
+GROQ_MAX_COMPLETION_TOKENS=1024
+GROQ_MAX_CONCURRENT=4
+GROQ_RPM_LIMIT=30
+GROQ_TPM_LIMIT=8000
+GROQ_RPD_LIMIT=1000
+GROQ_TPD_LIMIT=200000
+GROQ_TEAM_MIN_INTERVAL=60
+GROQ_CONTEXT_BYTES=2800
+# The same private cipher catalog file must exist on the laptop.
+CIPHER_CATALOG_PATH=
+# Optional local-only backup. Ollama must be installed and the model pulled.
+OLLAMA_BACKUP_URL=http://127.0.0.1:11434
+OLLAMA_BACKUP_MODEL=gemma3:4b
+OLLAMA_BACKUP_TIMEOUT=25
