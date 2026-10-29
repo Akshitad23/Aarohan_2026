@@ -16,6 +16,7 @@ secrets.json
 credentials.*
 !backend/.env.example
 !backend/event-fallback.example
+!backend/rehearsal.env.example
 *.db
 *.db-wal
 *.db-shm

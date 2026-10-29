@@ -40,7 +40,7 @@ When the service is available, check `/api/health` and confirm that storage repo
 2. Sign in to the admin page. Check the AI status and remaining budget. A configured key is not proof of a successful live reply; run a team rehearsal prompt and check its response.
 3. Verify the private competition catalog is active. It is configured in Render as the masked `CIPHER_CATALOG_JSON` environment variable. Do not paste its contents into a student-facing page or public repository.
 4. Select Morning or Afternoon and open registration for that session. Do not use an old team's resume code for a different session.
-5. Register a test team and confirm it waits in the lobby. Check team names, schools and participant counts in admin.
+5. As competition teams register, confirm their names, schools, participant counts and waiting status in admin. Use the isolated local rehearsal for fake teams; do not add a test team to the live session.
 6. Start the session once, when all teams are ready. This starts the five-minute timeline clock for all registered teams together. Tell teams that the server clock continues if they refresh or leave the tab.
 7. Confirm the organizer can see the live roster and objective marks. Avoid restarting or changing deployment settings during play.
 

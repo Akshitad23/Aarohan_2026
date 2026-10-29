@@ -1,5 +1,7 @@
 # AI: Think. Hack. Create.
 
+For the complete setup, rehearsal, session, outage and grading procedures, use the [final event runbook](docs/FINAL_EVENT_RUNBOOK.md).
+
 The application combines team registration, a two-part cryptography challenge, and an organiser dashboard. Flask serves the website and API from one origin. Morning and Afternoon have separate registrations, clocks, transcripts, attempts, and results. Hosted deployments use Neon Postgres; local development can use SQLite.
 
 ## Event flow
