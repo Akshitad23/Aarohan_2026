@@ -211,14 +211,14 @@ def mutate(token, action, data):
             if not isinstance(placed, list) or len(placed) != len(valid) or any(not isinstance(x,str) for x in placed) or set(placed) != valid:
                 raise EventError('Place each timeline card exactly once before submitting.')
             if engine.round2_started:
-                raise EventError('Round 1 submissions have closed.', 409)
+                raise EventError('Round 1: Part A submissions have closed.', 409)
             correct, slots, message = engine.check_timeline_submission(placed)
             conn.execute('INSERT INTO timeline_attempts(session_id,team_id,batch_id,submitted_at,attempt,placed_ids,slot_results,correct,score) VALUES(?,?,?,?,?,?,?,?,?)',
                 (engine.session_id,engine.team_id,team['batch_id'],time.time(),engine.round1_attempts,json.dumps(placed),json.dumps(slots),int(correct),engine.round1_score))
             result = {'correct': correct, 'slot_results': slots, 'message': message}
         elif action == 'answer':
             if not engine.round2_started:
-                raise EventError('Round 2 has not started.', 409)
+                raise EventError('Round 1: Part B has not started.', 409)
             index = data.get('word_index', data.get('word_id'))
             if not valid_target(index):
                 raise EventError('Choose word 1 or word 2.')
@@ -229,7 +229,7 @@ def mutate(token, action, data):
             log_answer(conn, engine, team['batch_id'], data, result.get('correct'), 'correct' if result.get('correct') else 'incorrect')
         elif action == 'finish':
             if not engine.round2_started:
-                raise EventError('Round 2 has not started.', 409)
+                raise EventError('Round 1: Part B has not started.', 409)
             finish_session(engine, 'submitted')
             result = {'message': 'Your score has been submitted.'}
         else:
@@ -251,7 +251,7 @@ def prompt(token, data):
         event = event_state(conn,team['batch_id'])
         refresh(engine, event)
         if event['status'] != 'running' or not engine.round2_started or engine.is_finished:
-            raise EventError('Prompts are accepted only during Round 2.', 409)
+            raise EventError('Prompts are accepted only during Round 1: Part B.', 409)
         now = time.time()
         if row['pending_until'] > now and row['pending_token']:
             raise EventError('Your previous prompt is still being processed.', 409)

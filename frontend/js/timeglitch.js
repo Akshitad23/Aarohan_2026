@@ -122,7 +122,7 @@
       $('attempts').textContent = `${r1.attempts_left ?? 3 - (r1.attempts || 0)} attempts left`;
     }
     if (state.phase === 'round2') {
-      $('round1Outcome').textContent = r1.score === 2 ? 'Timeline restored. 2 marks recorded.' : 'Round 1 is over. Continue with the two cipher words.';
+      $('round1Outcome').textContent = r1.score === 2 ? 'Timeline restored. 2 marks recorded.' : 'Round 1: Part A is over. Continue with the two cipher words in Round 1: Part B.';
       $('promptCount').textContent = `${r2.prompt_count || 0} prompts`;
       $('qualitySummary').textContent = state.quality_status === 'reviewed' || state.quality_reviewed ? `${r2.quality_marks} / 4 marks, reviewed` : 'Prompt quality pending';
       const nextWords = JSON.stringify(r2.words || []);
@@ -174,7 +174,7 @@
     if (!remaining) { updateControls(); refresh(); }
   }
   $('submitTimeline').onclick = () => mutate('/api/tg/round1/submit', {placed_ids:draft}, result => {
-    $('timelineFeedback').textContent = result.message || (current.phase === 'round1' ? 'The order is not correct. Rearrange the events and try again.' : 'Round 1 complete.');
+    $('timelineFeedback').textContent = result.message || (current.phase === 'round1' ? 'The order is not correct. Rearrange the events and try again.' : 'Round 1: Part A complete.');
   });
   $('promptForm').onsubmit = async event => {
     event.preventDefault(); const message = $('promptInput').value.trim(); if (!message) return;
@@ -183,7 +183,7 @@
     if (ok) $('promptInput').value = ''; $('promptStatus').textContent = ''; if (current?.phase === 'round2' && !accessChanged) $('promptInput').focus();
   };
   $('finishGame').onclick = () => {
-    if (window.confirm('Finish Round 2 now? You will keep your current marks and cannot send more prompts or word answers.')) mutate('/api/tg/round2/finish');
+    if (window.confirm('Finish Round 1: Part B now? You will keep your current marks and cannot send more prompts or word answers.')) mutate('/api/tg/round2/finish');
   };
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(true); });
   window.addEventListener('online', () => refresh(true));

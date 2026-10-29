@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>
-      Timeglitch | Aarohan '26
+      AI: Think. Hack. Create.
     </title>
     <link rel="preload" href="/assets/fonts/big-shoulders-display.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/assets/fonts/ibm-plex-sans.woff2" as="font" type="font/woff2" crossorigin>
@@ -18,7 +18,7 @@
     <header>
       <div class="topbar">
         <a class="brand" href="/">
-          <span class="brand-context">AAROHAN '26 · EVENT TERMINAL</span>
+          <span class="brand-context">AI: THINK. HACK. CREATE.</span>
           <span class="brand-title">TIMEGLITCH</span>
         </a>
         <nav>
@@ -32,10 +32,8 @@
       </div>
     </header>
     <main>
-      <div id="connection" class="notice" role="status" aria-live="polite">
-      </div>
-      <div id="gameError" class="message error" role="alert">
-      </div>
+      <div id="connection" class="notice" role="status" aria-live="polite"></div>
+      <div id="gameError" class="message error" role="alert"></div>
       <section id="waiting" class="panel" hidden>
         <div class="eyebrow">
           WAITING ROOM
@@ -44,7 +42,7 @@
           Your team is ready
         </h1>
         <p>
-          The organiser will start Round 1 for every team together. Keep this page open.
+          The organiser will start the event for every team together. Keep this page open.
         </p>
         <div class="scorebar">
           <div class="score">
@@ -52,7 +50,7 @@
               5 min
             </strong>
             <span>
-              Round 1
+              Round 1: Part A
             </span>
           </div>
           <div class="score">
@@ -60,7 +58,7 @@
               15 min
             </strong>
             <span>
-              Round 2
+              Round 1: Part B
             </span>
           </div>
           <div class="score">
@@ -81,26 +79,26 @@
           </div>
         </div>
         <p class="muted">
-          Order the space events first, then prompt CHRONOS for cipher hints and decode two words. Every team reaches Round 2.
+          Order the space events first, then prompt CHRONOS for cipher hints and decode two words. Every team continues to Round 1: Part B.
         </p>
       </section>
       <section id="round1" hidden>
         <div class="row between">
           <div>
             <div class="eyebrow">
-              ROUND 1 / 2 MARKS
+              ROUND 1: PART A / 2 MARKS
             </div>
             <h1 id="round1Heading" tabindex="-1">
               Repair the timeline
             </h1>
           </div>
-          <div class="timer" id="round1Timer" aria-label="Round 1 time remaining">
+          <div class="timer" id="round1Timer" aria-label="Round 1: Part A time remaining">
             05:00
           </div>
         </div>
         <div class="panel">
           <p>
-            Arrange the events from earliest to latest. You have five minutes and up to three attempts. A correct order earns 2 marks and opens Round 2 immediately.
+            Arrange the events from earliest to latest. You have five minutes and up to three attempts. A correct order earns 2 marks and opens Round 1: Part B immediately.
           </p>
           <div class="row between">
             <span id="attempts" class="badge">
@@ -112,15 +110,14 @@
           </div>
           <ol id="timeline" class="timeline">
           </ol>
-          <p id="timelineFeedback" class="message" role="status">
-          </p>
+          <p id="timelineFeedback" class="message" role="status"></p>
           <div class="actions">
             <button id="submitTimeline" type="button">
               Submit order
             </button>
           </div>
           <p class="muted">
-            After three unsuccessful attempts or five minutes, you continue to Round 2 with 0 marks for this round.
+            After three unsuccessful attempts or five minutes, you continue to Round 1: Part B with 0 marks for this part.
           </p>
         </div>
       </section>
@@ -128,18 +125,17 @@
         <div class="row between">
           <div>
             <div class="eyebrow">
-              ROUND 2 / 8 MARKS
+              ROUND 1: PART B / 8 MARKS
             </div>
             <h1 id="round2Heading" tabindex="-1">
               Recover the two words
             </h1>
           </div>
-          <div class="timer" id="round2Timer" aria-label="Round 2 time remaining">
+          <div class="timer" id="round2Timer" aria-label="Round 1: Part B time remaining">
             15:00
           </div>
         </div>
-        <div id="round1Outcome" class="message">
-        </div>
+        <div id="round1Outcome" class="message"></div>
         <p class="muted">You have fifteen minutes to obtain the cipher hints and submit both decoded words.</p>
         <div class="game-grid">
           <section class="panel">
@@ -186,8 +182,7 @@
               </h2>
               <div id="words">
               </div>
-              <p id="answerFeedback" class="message" role="status">
-              </p>
+              <p id="answerFeedback" class="message" role="status"></p>
             </section>
             <section class="panel">
               <h2>
@@ -218,7 +213,7 @@
         </div>
         <div class="actions">
           <button id="finishGame" class="secondary" type="button">
-            Finish Round 2
+            Finish Round 1: Part B
           </button>
           <span class="muted">
             You can finish with one or both words unsolved.

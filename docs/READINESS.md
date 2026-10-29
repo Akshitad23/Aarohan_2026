@@ -1,6 +1,6 @@
 # Remaining event preparation
 
-Round one is five minutes with at most three attempts. A correct order earns 2 marks and opens round two immediately. Three unsuccessful attempts or expiry also opens round two. Each team then has fifteen minutes. Morning and Afternoon keep independent registrations, starts, results and exports.
+Round 1: Part A is five minutes with at most three attempts. A correct order earns 2 marks and opens Round 1: Part B immediately. Three unsuccessful attempts or expiry also opens Round 1: Part B. Each team then has fifteen minutes. Morning and Afternoon keep independent registrations, starts, results and exports.
 
 The application records objective marks out of 6. Prompt quality remains pending until post-event review supplies up to 4 marks. Excel exports and validated grade imports are implemented. An automatic AI judging notebook is not implemented; the later scoring pass still needs the exported transcripts and organizer review.
 

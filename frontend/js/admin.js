@@ -14,6 +14,7 @@
   const checkAuth = error => { if (error.status === 401 || error.status === 403) { api.logout(); location.replace('/admin-login'); } };
   const statistic = (value, label) => { const card = api.node('div', undefined, 'score'); card.append(api.node('strong', String(value)), api.node('span', label)); return card; };
   const batchName = id => batches.find(batch => batch.batch_id === id)?.name || id || 'session';
+  const phaseName = phase => ({round1:'Round 1: Part A', round2:'Round 1: Part B', waiting:'Waiting', finished:'Finished'})[phase] || phase || 'Registered';
   function renderTable() {
     const query = $('teamSearch').value.trim().toLowerCase();
     $('teamsTable').replaceChildren();
@@ -22,7 +23,7 @@
       const session = sessions.find(item => item.team_id === team.team_id);
       const row = api.node('tr');
       const title = api.node('td'); title.append(api.node('strong', team.team_name), api.node('br'), api.node('small', team.team_id)); row.append(title);
-      const values = [team.school_name, session?.phase || 'Registered', session?.round1_score ?? '-', session?.word1_score ?? '-', session?.word2_score ?? '-', session?.quality_score ?? 'Pending', session?.objective_score ?? '-', session?.final_score ?? 'Pending'];
+      const values = [team.school_name, phaseName(session?.phase), session?.round1_score ?? '-', session?.word1_score ?? '-', session?.word2_score ?? '-', session?.quality_score ?? 'Pending', session?.objective_score ?? '-', session?.final_score ?? 'Pending'];
       values.forEach(value => row.append(api.node('td', String(value))));
       const actions = api.node('td');
       const details = api.node('button', 'Details', 'secondary'); details.type = 'button'; details.onclick = () => openRoster(team); actions.append(details);
@@ -45,7 +46,7 @@
     const running = event.status === 'running';
     const ended = event.status === 'ended';
     $('eventState').textContent = `${batchName(selectedBatchId)} / ${waiting ? 'Waiting for teams' : running ? 'In progress' : ended ? 'Ended' : 'Loading'}`;
-    $('eventDetail').textContent = ended ? 'Results are saved. Grade prompt quality from the complete transcript or export this session.' : running ? 'Teams share the Round 1 start time and continue to Round 2 when their timeline round ends.' : active ? 'Start this session once its teams have registered.' : 'Open registration for this session before teams join.';
+    $('eventDetail').textContent = ended ? 'Results are saved. Grade prompt quality from the complete transcript or export this session.' : running ? 'Teams share the start time. They continue to Round 1: Part B when the timeline part ends.' : active ? 'Start this session once its teams have registered.' : 'Open registration for this session before teams join.';
     $('activeBatchStatus').textContent = `Registration session: ${registrationEvent.name || 'loading'}`;
     $('activateBatch').hidden = active || ended;
     $('activateBatch').disabled = changingEvent || !waiting || registrationEvent.status === 'running';

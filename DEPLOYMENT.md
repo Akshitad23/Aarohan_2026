@@ -30,7 +30,7 @@ Morning and Afternoon have separate registrations, starts, deadlines, results, r
 
 1. Select Morning in admin and open its registration. Teams register and wait in the lobby.
 2. Check the roster and start Morning once. All registered teams receive the same timeline deadline.
-3. Round one allows five minutes and three attempts. Success earns 2 marks and opens round two immediately. Exhausted attempts or expiry opens round two with 0 timeline marks. Round two lasts fifteen minutes per team.
+3. Round 1: Part A allows five minutes and three attempts. Success earns 2 marks and opens Round 1: Part B immediately. Exhausted attempts or expiry opens Round 1: Part B with 0 timeline marks. Round 1: Part B lasts fifteen minutes per team.
 4. Each decoded word earns 2 marks. Prompt quality stays pending. Admin shows objective marks out of 6 until review supplies the remaining 4 marks.
 5. End Morning and download its full Excel workbook.
 6. Activate Afternoon registration and repeat. This preserves Morning.

@@ -1,14 +1,14 @@
-# Aarohan 2026: Timeglitch
+# AI: Think. Hack. Create.
 
-Timeglitch combines team registration, a two-round cryptography challenge, and an organizer dashboard. Flask serves the website and API from one origin. Morning and Afternoon have separate registrations, clocks, transcripts, attempts, and results. Hosted deployments use Neon Postgres; local development can use SQLite.
+The application combines team registration, a two-part cryptography challenge, and an organiser dashboard. Flask serves the website and API from one origin. Morning and Afternoon have separate registrations, clocks, transcripts, attempts, and results. Hosted deployments use Neon Postgres; local development can use SQLite.
 
 ## Event flow
 
 1. The organizer selects Morning or Afternoon in `/admin` and opens registration for that session.
 2. Teams register at `/`, receive a private resume code, and enter the waiting room. A registration belongs permanently to its session.
 3. The organizer starts the selected session for all its teams together.
-4. Round 1 lasts five minutes and permits three complete timeline submissions. A correct order earns 2 marks and opens Round 2 immediately. Three unsuccessful submissions or expiry also open Round 2, with 0 timeline marks.
-5. Each team has fifteen minutes in Round 2 by default. Students prompt CHRONOS for two independent cipher hints, decode the words themselves, and submit each answer separately. Each correct word earns 2 marks.
+4. Round 1: Part A lasts five minutes and permits three complete timeline submissions. A correct order earns 2 marks and opens Round 1: Part B immediately. Three unsuccessful submissions or expiry also open Round 1: Part B, with 0 timeline marks.
+5. Each team has fifteen minutes in Round 1: Part B by default. Students prompt CHRONOS for two independent cipher hints, decode the words themselves, and submit each answer separately. Each correct word earns 2 marks.
 6. The live dashboard shows objective marks out of 6. Prompt quality and the final score remain pending until organizers grade the transcript after the session ends.
 7. End Morning before opening Afternoon registration. A Morning code continues to access Morning results. Students joining Afternoon need a new registration and private code, including when reusing a laptop.
 
@@ -101,6 +101,7 @@ Local tests do not certify cloud or provider capacity. Use [the verification rec
 - [AI behavior, technique examples, and backup setup](docs/AI_RECOMMENDATIONS.md)
 - [Cipher combinations and private catalog format](docs/CIPHERS.md)
 - [Post-event grading and export/import pipeline](docs/PROMPT_SCORING.md)
+- [Event operator guide](docs/EVENT_OPERATOR_GUIDE.md)
 - [Deployment and event operations](DEPLOYMENT.md)
 - [Verification record](docs/VERIFICATION.md)
 - [Remaining event preparation](docs/READINESS.md)

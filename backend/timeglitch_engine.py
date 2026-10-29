@@ -94,7 +94,7 @@ class TimeglitchSession:
     def check_timeline_submission(self, placed_ids):
         self._refresh_clock()
         if self.round2_started:
-            return self.round1_completed, [False] * 5, "Round 1 is closed. Continue to Round 2."
+            return self.round1_completed, [False] * 5, "Round 1: Part A is closed. Continue to Round 1: Part B."
         if not isinstance(placed_ids, list) or len(placed_ids) != 5 or not all(isinstance(i, str) for i in placed_ids) or set(placed_ids) != set(self.correct_order):
             return False, [False] * 5, "Place each of the five event cards exactly once."
         self.round1_attempts += 1
@@ -105,11 +105,11 @@ class TimeglitchSession:
             self.round1_score = 2
             self.start_round2()
             self._update_score()
-            return True, matches, "Timeline correct. Awarded 2/2 marks. Round 2 is ready."
+            return True, matches, "Timeline correct. Awarded 2/2 marks. Round 1: Part B is ready."
         if self.round1_attempts >= MAX_TIMELINE_ATTEMPTS:
             self.round1_status = "attempts_exhausted"
             self.start_round2()
-            return False, matches, "Three attempts used. Round 1 scored 0/2. Continue to Round 2."
+            return False, matches, "Three attempts used. Round 1: Part A scored 0/2. Continue to Round 1: Part B."
         return False, matches, f"Some events are out of order. {3 - self.round1_attempts} attempt(s) remain."
 
     def handle_round1_timeout(self):
@@ -186,9 +186,9 @@ class TimeglitchSession:
     def process_prompt(self, user_prompt, client_remaining=None, target=None):
         self._refresh_clock()
         if not self.round2_started:
-            return {"error": "Round 2 has not started."}
+            return {"error": "Round 1: Part B has not started."}
         if self.is_finished:
-            return {"error": "Round 2 is closed.", "timed_out": self.round2_timed_out}
+            return {"error": "Round 1: Part B is closed.", "timed_out": self.round2_timed_out}
         prompt = str(user_prompt).strip()
         if not prompt or len(prompt) > 2000:
             return {"error": "Use a prompt between 1 and 2000 characters."}
@@ -262,7 +262,7 @@ class TimeglitchSession:
     def submit_word(self, word_id, answer):
         self._refresh_clock()
         if not self.round2_started or self.is_finished:
-            return {"error": "Round 2 is closed or has not started."}
+            return {"error": "Round 1: Part B is closed or has not started."}
         key = self._target_key(word_id)
         if not key:
             return {"error": "Unknown word."}

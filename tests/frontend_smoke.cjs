@@ -35,6 +35,22 @@ function page(script, access = {}) {
   return {get:id => document.getElementById(id), api:context.EventAPI, context, window, listeners, windowListeners, timers, redirects, downloads, created, run:() => vm.runInContext(source(script), context)};
 }
 const settle = () => new Promise(resolve => setImmediate(resolve));
+
+function copyChecks() {
+  const frontend = path.join(__dirname, '..', 'frontend');
+  for (const name of ['index.html', 'admin-login.html', 'admin.html', 'game.html']) {
+    const html = fs.readFileSync(path.join(frontend, name), 'utf8');
+    assert.match(html, /AI: Think\. Hack\. Create\./, `${name} must use the event name.`);
+    assert.doesNotMatch(html, /Round 2|ROUND 2/, `${name} must use the updated part label.`);
+  }
+  const game = fs.readFileSync(path.join(frontend, 'game.html'), 'utf8');
+  assert.match(game, /Round 1: Part A/);
+  assert.match(game, /Round 1: Part B/);
+  const admin = fs.readFileSync(path.join(frontend, 'js', 'admin.js'), 'utf8');
+  assert.match(admin, /round1:'Round 1: Part A'/);
+  assert.match(admin, /round2:'Round 1: Part B'/);
+  console.log('UI copy: event name and Round 1 part labels are present on all pages.');
+}
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return {promise, resolve}; };
 const event = (batch_id, status) => ({batch_id, name:batch_id === 'morning' ? 'Morning' : 'Afternoon', status});
 const state = (phase = 'round2', reviewed = false) => ({phase, event:event('morning','running'), team_id:'T1', team_name:'Test team', objective_score:4, quality_status:reviewed ? 'reviewed' : 'pending', final_score:reviewed ? 7 : null, total_score:reviewed ? 7 : 4, round1:{score:2,remaining_seconds:300}, round2:{remaining_seconds:900, prompt_count:0, quality_marks:reviewed ? 3 : null, words:[{index:1,ciphertext:'TEST',solved:true,score:2},{index:2,ciphertext:'OTHER',solved:false,score:0}]}, prompt_history:[]});
@@ -88,10 +104,10 @@ async function timelineChecks() {
   await test.get('submitTimeline').onclick();
   assert.equal(submitted[0], 'card-1');
   assert.equal(submitted[1], 'card-0');
-  assert.equal(test.get('round2').hidden, false, 'A correct first submission should open Round 2 immediately.');
+  assert.equal(test.get('round2').hidden, false, 'A correct Part A submission should open Part B immediately.');
   assert.equal(test.get('round2Timer').textContent, '15:00');
   assert.equal(test.get('round2Heading').focusCount, 1);
-  console.log('Timeline: five-minute clock, three attempts, accessible reorder, and immediate fifteen-minute Round 2 pass.');
+  console.log('Timeline: five-minute clock, three attempts, accessible reorder, and immediate fifteen-minute Part B pass.');
 }
 
 async function registrationChecks() {
@@ -213,4 +229,4 @@ async function delayedAdminChecks() {
   console.log('Admin races: stale private-code and transcript responses ignored; export filename retains its requested batch.');
 }
 
-(async () => { await gameChecks(); await timelineChecks(); await registrationChecks(); await adminChecks(); await delayedGameChecks(); await delayedAdminChecks(); })().catch(error => { console.error(error); process.exitCode = 1; });
+(async () => { copyChecks(); await gameChecks(); await timelineChecks(); await registrationChecks(); await adminChecks(); await delayedGameChecks(); await delayedAdminChecks(); })().catch(error => { console.error(error); process.exitCode = 1; });

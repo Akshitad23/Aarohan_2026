@@ -1,6 +1,6 @@
 # Event implementation plan
 
-The target is 30 to 40 teams using one shared website. Morning and Afternoon have separate registrations, clocks, logs, and results. Each team registers for the active session, waits for its organizer start, and completes both rounds. The live score covers objective marks out of 6; prompt quality and the final total out of 10 remain pending until post-event grading. The same server supplies the admin dashboard.
+The target is 30 to 40 teams using one shared website. Morning and Afternoon have separate registrations, clocks, logs, and results. Each team registers for the active session, waits for its organizer start, and completes both parts. The live score covers objective marks out of 6; prompt quality and the final total out of 10 remain pending until post-event grading. The same server supplies the admin dashboard.
 
 ## Findings in the original repository
 
@@ -24,7 +24,7 @@ The Kalakriti project was inspected as requested. Its useful pattern is to decid
 1. Separate cipher data, hint unlock rules, and provider dialogue. Validate every cipher round trip. Each word accepts any one of three eligible meaningful techniques and releases its full hint pack at once.
 2. Make registration, event state, sessions, transcripts, attempts, scores, and admin review persistent. Authenticate every team mutation. Reserve a prompt before the provider call, then save its result without holding a database write lock during the network request.
 3. Replace the client-side simulation with same-origin API requests. Restore sessions after reload and show a connection error when the server is unavailable.
-4. Add separate Morning and Afternoon registrations and organizer start/end actions, with a shared round-one deadline inside each session. A correct answer advances immediately. Three unsuccessful submissions or expiry also advance to round two.
+4. Add separate Morning and Afternoon registrations and organizer start/end actions, with a shared Round 1: Part A deadline inside each session. A correct answer advances immediately. Three unsuccessful submissions or expiry also advance to Round 1: Part B.
 5. Score timeline accuracy out of 2, each decoded word out of 2, and prompt quality out of 4. Show objective marks out of 6 while leaving quality and the final score pending. Grade the transcript only after its event session ends.
 6. Add the session-filtered admin roster, score updates, complete transcripts including failed AI requests, Excel exports, and audited post-event grading. Poll every few seconds; this is near-real-time polling, not a push connection.
 7. Test invalid access, duplicated requests, refresh/restart recovery, timeout boundaries, scoring, cipher correctness, provider failure, and concurrent teams. Run a 40-team rehearsal on an isolated database.
@@ -40,9 +40,9 @@ Incremental transcripts reduce both Neon-to-server and server-to-browser transfe
 
 ## Rules used where the request leaves a choice
 
-- Round one starts at the admin's shared event start, lasts 300 seconds, and permits at most three complete submissions. A correct timeline earns 2 on any permitted attempt. There is no speed or attempt penalty.
-- Each team gets 900 seconds for round two from the time it advances. The request permits early progression, so a team that solves round one early can finish earlier. All teams receive the same round-two duration. Both sessions use this same timing rule.
-- Teams can reach round two even with 0 in round one.
+- Round 1: Part A starts at the admin's shared event start, lasts 300 seconds, and permits at most three complete submissions. A correct timeline earns 2 on any permitted attempt. There is no speed or attempt penalty.
+- Each team gets 900 seconds for Round 1: Part B from the time it advances. The request permits early progression, so a team that solves Round 1: Part A early can finish earlier. All teams receive the same Round 1: Part B duration. Both sessions use this same timing rule.
+- Teams can reach Round 1: Part B even with 0 in Round 1: Part A.
 - Decoding earns marks only through the separate answer submission fields. A chatbot response cannot award decoding marks.
 - Automatic prompt-quality marks are removed. After its event session ends, a judge reviews the full transcript and records a score with a reason. The Excel grading template can be validated and imported atomically through grade_reviews.py.
 - No time bonus, prompt-count penalty, or hint deduction is included in the total of 10.
