@@ -16,7 +16,7 @@ All 12 cipher combinations round-trip. Each of the 72 eligible word/technique pa
 
 The gateway's eight focused tests cover authentication, its fixed local upstream, pinned model, bounded context and output, concurrency, invalid requests, and upstream errors.
 
-JavaScript syntax and `node tests/frontend_smoke.cjs` pass. The checks cover 5-minute and 15-minute clocks, three timeline attempts, immediate progression, session selection, draft retention, provider identity, pending and reviewed marks, transcripts, and Excel downloads. Deferred-response tests cover team recovery, export filenames, initial state loading and cross-tab access changes. Phase changes focus the new heading while same-phase polls preserve focus. All four pages have unique IDs and existing assets. The previous release passed [GitHub Actions](https://github.com/Akshitad23/Aarohan_2026/actions/runs/40929546254); the audit revision needs its own run after pushing.
+JavaScript syntax and `node tests/frontend_smoke.cjs` pass. The checks cover 5-minute and 15-minute clocks, three timeline attempts, immediate progression, session selection, draft retention, provider identity, pending and reviewed marks, transcripts, and Excel downloads. Deferred-response tests cover team recovery, export filenames, initial state loading and cross-tab access changes. Phase changes focus the new heading while same-phase polls preserve focus. All four pages have unique IDs and existing assets. The audit revision passed [GitHub Actions](https://github.com/Akshitad23/Aarohan_2026/actions/runs/40934038573), including all Python tests, a separate 40-team rehearsal, JavaScript syntax and frontend controller checks.
 
 ## Forty-team rehearsal
 
