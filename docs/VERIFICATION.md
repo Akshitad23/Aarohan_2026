@@ -4,7 +4,7 @@ Checked on 30 October 2026 using Windows and Ubuntu under WSL. Automated tests u
 
 ## Current automated checks
 
-All 77 Python tests passed on Python 3.12 under Linux with PostgreSQL 16, Gunicorn 23, psycopg 3.3.6 and openpyxl 3.1.5. No tests were skipped in that run. The earlier Windows run passed 70 tests and skipped five optional Postgres tests; the two additional SQLite journal-lock regression tests passed separately. Installed Python requirements have no dependency conflicts.
+The recorded Linux run passed 77 Python tests on Python 3.12 with PostgreSQL 16, Gunicorn 23, psycopg 3.3.6 and openpyxl 3.1.5. The current Windows run passed 73 tests and skipped five optional local-Postgres tests. It includes a check for loading the private catalog from Render's masked environment variable. The frontend smoke test, JavaScript syntax check and `git diff --check` also pass.
 
 The audit added checks for durable prompts after unexpected errors and interrupted workers, consistent workbook snapshots during concurrent grading, quoted and negated technique mentions, numeric and Unicode redaction, and rejected backup redirects. A real Postgres restart deadlock was reproduced and fixed. Current schema versions skip repeated startup changes; a regression checks initialization while another connection holds a read transaction.
 
@@ -41,8 +41,8 @@ The real local Ollama path also passed with the installed `gemma3:4b` model and 
 
 ## Theme and hosting
 
-All four pages use the reference site's blue grid, cream paper, navy text, condensed headings and locally hosted font files. Legacy unused styles were removed. The current theme still needs visual browser checks at laptop and mobile widths because local browser control became disabled during setup.
+All four pages use the reference site's blue grid, cream paper, navy text, condensed headings and locally hosted font files. Browser review covered registration, admin login, dashboard, waiting room, timeline and prompt-engineering screens. User-visible event naming and round labels were corrected without a layout redesign. A whitespace-only dynamic status message that left an empty bordered box was removed. Keyboard navigation and multiple screen sizes still need a venue-device check.
 
-The implementation was pushed to [the authorized GitHub deployment copy](https://github.com/Akshitad23/Aarohan_2026). A Neon Free Singapore project was created. Deployment configuration is prepared. Render service creation, the private Neon connection, cloud restart recovery, a public URL, and venue rehearsal remain unverified. The Render connector disappeared and local browser use became disabled before those account steps could be completed.
+The implementation is in [the authorized GitHub deployment copy](https://github.com/Akshitad23/Aarohan_2026). The Render Free service at [ai-think-hack-create.onrender.com](https://ai-think-hack-create.onrender.com) uses the Neon Postgres project and returns healthy status. A private competition catalog is configured through Render's masked environment variable; its JSON stays out of Git. The live AI health status shows configured credentials but no hosted provider reply yet. Cloud restart recovery and venue rehearsal remain unverified.
 
-Twelve new private pairs were prepared and validated in the ignored `backend/private/` folder. They use equal word lengths and the same protocol pair for more comparable ranked play. They are not active or published. Review and upload them before competition registration. The source catalog still contains public rehearsal answers. See [remaining event preparation](READINESS.md).
+Twelve new private pairs use equal word lengths and the same protocol pair for more comparable ranked play. The public source catalog contains rehearsal answers. See [remaining event preparation](READINESS.md) before opening registration.
