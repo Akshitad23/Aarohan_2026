@@ -332,13 +332,15 @@ class EventTests(unittest.TestCase):
 
     def test_schema_initialization_from_multiple_processes(self):
         import subprocess
-        env = {**os.environ, 'DATABASE_PATH':str(Path(self.temp.name)/'workers.sqlite3'),
-               'PYTHONPATH':str(Path(__file__).resolve().parents[1]/'backend')}
         code = "from logger_db import init_db,connect; init_db(); conn=connect(); assert conn.execute('SELECT COUNT(*) FROM event').fetchone()[0] == 1; conn.close()"
-        workers = [subprocess.Popen([sys.executable,'-c',code],env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True) for _ in range(4)]
-        for worker in workers:
-            output, error = worker.communicate(timeout=20)
-            self.assertEqual(worker.returncode, 0, error)
+        for trial in range(4):
+            with self.subTest(trial=trial):
+                env = {**os.environ,'DATABASE_PATH':str(Path(self.temp.name)/f'workers-{trial}.sqlite3'),
+                    'PYTHONPATH':str(Path(__file__).resolve().parents[1]/'backend')}
+                workers = [subprocess.Popen([sys.executable,'-c',code],env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True) for _ in range(4)]
+                for worker in workers:
+                    output, error = worker.communicate(timeout=20)
+                    self.assertEqual(worker.returncode, 0, error)
 
     def test_invalid_catalog_fails_startup(self):
         import subprocess

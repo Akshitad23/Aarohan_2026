@@ -3,6 +3,7 @@ import atexit
 import os
 import sqlite3
 import threading
+import time
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -171,6 +172,25 @@ def transaction():
     finally:
         conn.close()
 
+def enable_sqlite_wal(conn,timeout=5):
+    # Changing journal mode upgrades SQLite's file lock. Simultaneous first
+    # workers can receive BUSY immediately despite the regular busy timeout.
+    deadline=time.monotonic()+timeout
+    conn.execute('PRAGMA busy_timeout=100')
+    try:
+        while True:
+            try:
+                conn.execute('PRAGMA journal_mode=WAL').fetchone()
+                return
+            except sqlite3.OperationalError as error:
+                code=getattr(error,'sqlite_errorcode',None)
+                remaining=deadline-time.monotonic()
+                if code is None or (code & 255) not in (sqlite3.SQLITE_BUSY,sqlite3.SQLITE_LOCKED) or remaining<=0:
+                    raise
+                time.sleep(min(.05,remaining))
+    finally:
+        conn.execute('PRAGMA busy_timeout=15000')
+
 
 def init_db():
     with connect() as conn:
@@ -178,7 +198,7 @@ def init_db():
             conn.execute('SELECT pg_advisory_xact_lock(?)', (SCHEMA_LOCK,))
             has_meta=conn.execute("SELECT to_regclass('schema_meta')").fetchone()[0] is not None
         else:
-            conn.execute('PRAGMA journal_mode=WAL')
+            enable_sqlite_wal(conn)
             conn.execute('PRAGMA foreign_keys=OFF')
             conn.execute('BEGIN IMMEDIATE')
             has_meta=conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_meta'").fetchone() is not None

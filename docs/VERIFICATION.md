@@ -4,9 +4,11 @@ Checked on 30 October 2026 using Windows and Ubuntu under WSL. Automated tests u
 
 ## Current automated checks
 
-All 75 Python tests passed on Python 3.12 under Linux with PostgreSQL 16, Gunicorn 23, psycopg 3.3.6 and openpyxl 3.1.5. No tests were skipped in that run. The Windows run passed 70 tests and skipped the five optional local Postgres tests. Installed Python requirements have no dependency conflicts.
+All 77 Python tests passed on Python 3.12 under Linux with PostgreSQL 16, Gunicorn 23, psycopg 3.3.6 and openpyxl 3.1.5. No tests were skipped in that run. The earlier Windows run passed 70 tests and skipped five optional Postgres tests; the two additional SQLite journal-lock regression tests passed separately. Installed Python requirements have no dependency conflicts.
 
 The audit added checks for durable prompts after unexpected errors and interrupted workers, consistent workbook snapshots during concurrent grading, quoted and negated technique mentions, numeric and Unicode redaction, and rejected backup redirects. A real Postgres restart deadlock was reproduced and fixed. Current schema versions skip repeated startup changes; a regression checks initialization while another connection holds a read transaction.
+
+GitHub Actions also exposed a simultaneous SQLite journal-initialization race. Initialization now retries only SQLite BUSY and LOCKED errors within a five-second budget. Read-only, corrupt and unclassified errors still fail immediately. Parallel startup checks passed four fresh-database trials with four simultaneous processes on both Windows and Linux.
 
 Coverage includes independent Morning and Afternoon registration and clocks, immutable team access, legacy-schema migration, objective marks out of 6, pending quality, audited post-event grading, atomic CSV/XLSX grade imports, and full workbook exports. Exports preserve long text in continuation columns and prevent text from becoming executable spreadsheet formulas.
 
@@ -26,8 +28,8 @@ The latest full suite launched two Gunicorn processes with eight threads each ag
 | HTTP requests | 382 |
 | Unexpected failures | 0 |
 | Median response | 78.7 ms |
-| 95th percentile | 455.1 ms |
-| Maximum | 566.7 ms |
+| 95th percentile | 440.6 ms |
+| Maximum | 539.8 ms |
 
 The rehearsal covers concurrent registration, shared start, immediate timeline success, exhausted attempts, separate word marks, AI failure telemetry, pending quality, post-event review, independent Afternoon registration, logout, and restart recovery. Provider calls are disabled in this test. These measurements do not establish Render Free capacity, Neon internet latency, venue connectivity, or live AI throughput.
 

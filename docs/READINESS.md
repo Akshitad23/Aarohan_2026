@@ -30,7 +30,7 @@ The audit fixed stale team-recovery and transcript responses, session export fil
 
 Prompts now persist before the provider call. Interrupted and unexpected failures remain available in admin and Excel without counting as accepted turns. All workbook worksheets use one database snapshot, so a concurrent grade cannot produce contradictory totals and audit rows.
 
-Database startup now checks the schema version and skips repeated schema changes when it is current. This fixes a deadlock found while two workers restarted together. The updated full suite passes 75 tests, including the real Postgres restart rehearsal.
+Database startup now checks the schema version and skips repeated schema changes when it is current. This fixes a deadlock found while two workers restarted together. SQLite journal initialization handles a simultaneous-start lock with bounded retries. The updated full suite passes 77 tests, including the real Postgres restart rehearsal.
 
 The Ollama client rejects redirects. Ciphertext redaction handles additional numeric separators and compatible Unicode forms. Negated or quoted technique mentions no longer unlock a hint by themselves. Model output filters remain bounded checks; they cannot prove that arbitrary generated text never implies an answer or an unreleased operation.
 

@@ -20,6 +20,51 @@ ADMIN_URL = os.getenv('PG_ADMIN_TEST_URL', '')
 
 
 class StorageContractTests(unittest.TestCase):
+    def test_wal_initialization_retries_only_sqlite_lock_errors(self):
+        import sqlite3
+        from unittest.mock import Mock
+        for code in (sqlite3.SQLITE_BUSY,sqlite3.SQLITE_LOCKED,sqlite3.SQLITE_BUSY | (1<<8)):
+            with self.subTest(code=code):
+                connection=Mock()
+                locked=sqlite3.OperationalError('database is locked')
+                locked.sqlite_errorcode=code
+                attempts=0
+                def execute(query):
+                    nonlocal attempts
+                    if query=='PRAGMA journal_mode=WAL':
+                        attempts+=1
+                        if attempts==1:
+                            raise locked
+                    return Mock()
+                connection.execute.side_effect=execute
+                with patch.object(logger_db.time,'sleep') as pause:
+                    logger_db.enable_sqlite_wal(connection)
+                self.assertEqual(attempts,2)
+                pause.assert_called_once()
+                connection.execute.assert_any_call('PRAGMA busy_timeout=15000')
+
+    def test_wal_initialization_does_not_retry_other_errors_or_expired_budget(self):
+        import sqlite3
+        from unittest.mock import Mock
+        for code in (sqlite3.SQLITE_READONLY,sqlite3.SQLITE_CORRUPT,None,sqlite3.SQLITE_BUSY):
+            with self.subTest(code=code):
+                connection=Mock()
+                failure=sqlite3.OperationalError('initialization failed')
+                if code is not None:
+                    failure.sqlite_errorcode=code
+                def execute(query):
+                    if query=='PRAGMA journal_mode=WAL':
+                        raise failure
+                    return Mock()
+                connection.execute.side_effect=execute
+                with patch.object(logger_db.time,'sleep') as pause:
+                    with self.assertRaises(sqlite3.OperationalError) as caught:
+                        logger_db.enable_sqlite_wal(connection,timeout=0 if code==sqlite3.SQLITE_BUSY else 5)
+                self.assertIs(caught.exception,failure)
+                pause.assert_not_called()
+                self.assertEqual(sum(call.args[0]=='PRAGMA journal_mode=WAL' for call in connection.execute.call_args_list),1)
+                connection.execute.assert_any_call('PRAGMA busy_timeout=15000')
+
     def test_hosting_requires_persistent_database(self):
         with patch.object(logger_db, 'DATABASE_URL', ''):
             for flag in ({'RENDER':'true'}, {'RENDER_SERVICE_ID':'test-service'}, {'REQUIRE_DATABASE_URL':'true'}):
