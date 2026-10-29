@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>
+      Timeglitch | Aarohan '26
+    </title>
+    <link rel="preload" href="/assets/fonts/big-shoulders-display.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fonts/ibm-plex-sans.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/css/event.css">
+    <script defer src="/js/api.js">
+    </script>
+    <script defer src="/js/timeglitch.js">
+    </script>
+  </head>
+  <body class="game-page">
+    <header>
+      <div class="topbar">
+        <a class="brand" href="/">
+          <span class="brand-context">AAROHAN '26 · EVENT TERMINAL</span>
+          <span class="brand-title">TIMEGLITCH</span>
+        </a>
+        <nav>
+          <span id="teamName">
+            Connecting
+          </span>
+          <a href="/">
+            Team details
+          </a>
+        </nav>
+      </div>
+    </header>
+    <main>
+      <div id="connection" class="notice" role="status" aria-live="polite">
+      </div>
+      <div id="gameError" class="message error" role="alert">
+      </div>
+      <section id="waiting" class="panel" hidden>
+        <div class="eyebrow">
+          WAITING ROOM
+        </div>
+        <h1>
+          Your team is ready
+        </h1>
+        <p>
+          The organiser will start Round 1 for every team together. Keep this page open.
+        </p>
+        <div class="scorebar">
+          <div class="score">
+            <strong>
+              10 min
+            </strong>
+            <span>
+              Round 1
+            </span>
+          </div>
+          <div class="score">
+            <strong>
+              3
+            </strong>
+            <span>
+              Timeline attempts
+            </span>
+          </div>
+          <div class="score">
+            <strong>
+              10
+            </strong>
+            <span>
+              Total marks
+            </span>
+          </div>
+        </div>
+        <p class="muted">
+          Order the space events first, then prompt CHRONOS for cipher hints and decode two words. Every team reaches Round 2.
+        </p>
+      </section>
+      <section id="round1" hidden>
+        <div class="row between">
+          <div>
+            <div class="eyebrow">
+              ROUND 1 / 2 MARKS
+            </div>
+            <h1>
+              Repair the timeline
+            </h1>
+          </div>
+          <div class="timer" id="round1Timer" aria-label="Round 1 time remaining">
+            10:00
+          </div>
+        </div>
+        <div class="panel">
+          <p>
+            Arrange the events from earliest to latest. You have up to three attempts. A correct order earns 2 marks and opens Round 2 immediately.
+          </p>
+          <div class="row between">
+            <span id="attempts" class="badge">
+              3 attempts left
+            </span>
+            <span class="muted">
+              Earliest event at the top
+            </span>
+          </div>
+          <ol id="timeline" class="timeline">
+          </ol>
+          <p id="timelineFeedback" class="message" role="status">
+          </p>
+          <div class="actions">
+            <button id="submitTimeline" type="button">
+              Submit order
+            </button>
+          </div>
+          <p class="muted">
+            After three unsuccessful attempts or ten minutes, you continue to Round 2 with 0 marks for this round.
+          </p>
+        </div>
+      </section>
+      <section id="round2" hidden>
+        <div class="row between">
+          <div>
+            <div class="eyebrow">
+              ROUND 2 / 8 MARKS
+            </div>
+            <h1>
+              Recover the two words
+            </h1>
+          </div>
+          <div class="timer" id="round2Timer" aria-label="Round 2 time remaining">
+            10:00
+          </div>
+        </div>
+        <div id="round1Outcome" class="message">
+        </div>
+        <div class="game-grid">
+          <section class="panel">
+            <div class="row between">
+              <h2>
+                CHRONOS AI
+              </h2>
+              <span id="promptCount" class="badge">
+                0 prompts
+              </span>
+            </div>
+            <div id="chatHistory" class="chat-log" role="log" aria-label="Chat transcript" aria-live="polite">
+            </div>
+            <form id="promptForm">
+              <label for="targetWord">
+                Ask about
+              </label>
+              <select id="targetWord">
+                <option value="1">
+                  Word 1
+                </option>
+                <option value="2">
+                  Word 2
+                </option>
+              </select>
+              <label for="promptInput">
+                Your prompt
+              </label>
+              <textarea id="promptInput" maxlength="1000" required placeholder="Ask CHRONOS for the cipher protocol, its steps, or an example.">
+              </textarea>
+              <div class="actions">
+                <button id="sendPrompt" type="submit">
+                  Send prompt
+                </button>
+                <span id="promptStatus" class="muted" role="status">
+                </span>
+              </div>
+            </form>
+          </section>
+          <aside>
+            <section class="panel">
+              <h2>
+                Encrypted transmission
+              </h2>
+              <div id="words">
+              </div>
+              <p id="answerFeedback" class="message" role="status">
+              </p>
+            </section>
+            <section class="panel">
+              <h2>
+                Prompt quality
+              </h2>
+              <p id="qualitySummary">
+                Prompt quality pending
+              </p>
+              <ul class="rubric">
+                <li>
+                  State a clear task and identify the target word.
+                </li>
+                <li>
+                  Use the cipher clues and relevant context.
+                </li>
+                <li>
+                  Specify useful constraints and the response format.
+                </li>
+                <li>
+                  Test an example or refine your next prompt using the reply.
+                </li>
+              </ul>
+              <p class="muted">
+                Organisers grade your transcript after the session ends.
+              </p>
+            </section>
+          </aside>
+        </div>
+        <div class="actions">
+          <button id="finishGame" class="secondary" type="button">
+            Finish Round 2
+          </button>
+          <span class="muted">
+            You can finish with one or both words unsolved.
+          </span>
+        </div>
+      </section>
+      <section id="finished" class="panel" hidden>
+        <div class="eyebrow">
+          MISSION COMPLETE
+        </div>
+        <h1>
+          Your results are recorded
+        </h1>
+        <p id="finishMessage">
+        </p>
+        <div id="finalScores" class="scorebar">
+        </div>
+        <p id="qualityReviewStatus" class="muted">
+        </p>
+        <h2>
+          Chat transcript
+        </h2>
+        <div id="finalTranscript" class="chat-log">
+        </div>
+      </section>
+      <div id="liveScores" class="scorebar" hidden>
+      </div>
+      <footer>
+        Time limits continue during a refresh or connection loss. All results come from the event server.
+      </footer>
+    </main>
+  </body>
+</html>

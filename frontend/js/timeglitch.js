@@ -1,0 +1,188 @@
+'use strict';
+(() => {
+  const api = EventAPI;
+  const $ = id => document.getElementById(id);
+  const access = api.team();
+  let current = null;
+  let busy = false;
+  let polling = false;
+  let mutationVersion = 0;
+  let nextPollAt = 0;
+  let remainingAt = 0;
+  let receivedAt = performance.now();
+  let draft = [];
+  let cards = [];
+  let historySignature = '';
+  let wordsSignature = '';
+  const draftKey = `aarohan_timeline_draft_${access?.team?.team_id || 'team'}`;
+  const format = seconds => `${Math.floor(Math.max(0, seconds) / 60).toString().padStart(2, '0')}:${Math.ceil(Math.max(0, seconds) % 60).toString().padStart(2, '0')}`;
+  const unwrap = result => result.state || result;
+  if (!access?.token) { location.replace('/'); return; }
+  $('teamName').textContent = access.team?.team_name || 'Your team';
+
+  function scores(target, state) {
+    const r1 = state.round1 || {}; const r2 = state.round2 || {};
+    const words = r2.words || [];
+    const objective = state.objective_score ?? (Number(r1.score || 0) + words.reduce((sum, word) => sum + Number(word.score || 0), 0));
+    const reviewed = state.quality_status === 'reviewed' || state.quality_reviewed;
+    const values = [[`${r1.score || 0} / 2`, 'Timeline'], [`${words[0]?.score || 0} / 2`, 'Word 1'], [`${words[1]?.score || 0} / 2`, 'Word 2'], [`${objective} / 6`, 'Objective marks'], [reviewed ? `${r2.quality_marks} / 4` : 'Pending', 'Prompt quality'], [reviewed ? `${state.final_score ?? state.total_score} / 10` : 'Pending', 'Final score']];
+    target.replaceChildren(...values.map(([value, label]) => { const card = api.node('div', undefined, 'score'); card.append(api.node('strong', value), api.node('span', label)); return card; }));
+  }
+  function renderTimeline() {
+    $('timeline').replaceChildren();
+    draft.forEach((id, index) => {
+      const card = cards.find(item => item.id === id);
+      if (!card) return;
+      const row = api.node('li'); const copy = api.node('div', undefined, 'card-copy');
+      copy.append(api.node('strong', card.title));
+      if (card.description) copy.append(api.node('p', card.description));
+      const controls = api.node('div', undefined, 'move');
+      for (const [offset, label] of [[-1, 'Up'], [1, 'Down']]) {
+        const button = api.node('button', label, 'secondary'); button.type = 'button';
+        button.setAttribute('aria-label', `Move ${card.title} ${label.toLowerCase()}`);
+        button.disabled = busy || index + offset < 0 || index + offset >= draft.length;
+        button.onclick = () => {
+          [draft[index], draft[index + offset]] = [draft[index + offset], draft[index]];
+          localStorage.setItem(draftKey, JSON.stringify(draft)); renderTimeline();
+          $('timeline').children[index + offset]?.querySelector(`button[aria-label$="${label.toLowerCase()}"]`)?.focus();
+        };
+        controls.append(button);
+      }
+      row.append(copy, controls); $('timeline').append(row);
+    });
+  }
+  function transcript(target, history) {
+    target.replaceChildren();
+    for (const entry of history) {
+      for (const [label, content, className] of [['Your team', entry.prompt || entry.user_message, 'user'], [api.aiLabel(entry), entry.response || entry.aria_response, '']]) {
+        if (!content) continue;
+        const message = api.node('div', undefined, `chat-message ${className}`);
+        message.append(api.node('strong', label), document.createTextNode(content));
+        if (!className && api.aiNote(entry)) message.append(api.node('p', api.aiNote(entry), 'muted'));
+        target.append(message);
+      }
+    }
+    if (!history.length) target.append(api.node('p', 'CHRONOS guards the two cipher protocols. Use your prompts to obtain a protocol hint, then decode each word yourself.', 'muted'));
+    target.scrollTop = target.scrollHeight;
+  }
+  function renderWords(words) {
+    const answers = Object.fromEntries(Array.from($('words').querySelectorAll('input')).map(input => [input.id, input.value]));
+    $('words').replaceChildren();
+    words.forEach((word, offset) => {
+      const index = word.index || offset + 1;
+      const card = api.node('section', undefined, 'word-card');
+      card.append(api.node('h3', `Word ${index} ${word.solved ? '(decoded)' : ''}`), api.node('div', word.ciphertext || '', 'ciphertext'));
+      if (word.hint) card.append(api.node('p', typeof word.hint === 'string' ? word.hint : [word.hint.name, word.hint.instructions, word.hint.example].filter(Boolean).join('\n'), 'message'));
+      if (word.solved) card.append(api.node('p', '2 / 2 marks recorded', 'success'));
+      else {
+        const form = api.node('form'); const label = api.node('label', `Decoded word ${index}`); label.htmlFor = `answer${index}`;
+        const input = api.node('input'); input.id = label.htmlFor; input.required = true; input.maxLength = 80; input.autocomplete = 'off'; input.spellcheck = false; input.value = answers[input.id] || '';
+        const action = api.node('div', undefined, 'actions'); const button = api.node('button', `Submit word ${index}`); button.type = 'submit'; action.append(button);
+        form.append(label, input, action); form.onsubmit = async event => { event.preventDefault(); await mutate('/api/tg/round2/answer', {word_index:index, answer:input.value.trim()}, result => {
+          const updated = unwrap(result).round2?.words?.find(item => item.index === index);
+          $('answerFeedback').textContent = result.message || (updated?.solved || result.correct ? `Word ${index} is correct. 2 marks recorded.` : `Word ${index} is not correct yet. Try again.`);
+        }); };
+        card.append(form);
+      }
+      $('words').append(card);
+    });
+  }
+  function updateControls() {
+    const expired = current && current.phase !== 'waiting' && current.phase !== 'finished' && remainingAt - (performance.now() - receivedAt) / 1000 <= 0;
+    $('submitTimeline').disabled = busy || expired || !cards.length;
+    $('sendPrompt').disabled = busy || expired;
+    $('finishGame').disabled = busy;
+    $('words').querySelectorAll('button,input').forEach(element => { element.disabled = busy || expired; });
+    $('promptInput').disabled = busy || expired;
+    $('targetWord').disabled = busy || expired;
+    $('timeline').querySelectorAll('button').forEach(button => { if (busy || expired) button.disabled = true; });
+  }
+  function render(state) {
+    if (!state?.phase) throw new Error('The server returned an invalid game state. Contact the organiser.');
+    state.prompt_history = api.mergeHistory(current?.prompt_history || [], state.prompt_history || state.round2?.prompt_history || [], state.prompt_history_complete !== false);
+    const oldPhase = current?.phase; current = state;
+    receivedAt = performance.now(); remainingAt = Number((state.phase === 'round1' ? state.round1 : state.round2)?.remaining_seconds || 0);
+    for (const phase of ['waiting', 'round1', 'round2', 'finished']) $(phase).hidden = state.phase !== phase;
+    if (state.team?.team_name || state.team_name) $('teamName').textContent = [state.team?.team_name || state.team_name, state.event?.name].filter(Boolean).join(' / ');
+    const r1 = state.round1 || {}; const r2 = state.round2 || {};
+    $('liveScores').hidden = !['round1','round2'].includes(state.phase); scores($('liveScores'), state);
+    if (state.phase === 'round1') {
+      cards = r1.milestones || [];
+      if (!draft.length) {
+        try { draft = JSON.parse(localStorage.getItem(draftKey) || '[]'); } catch { draft = []; }
+        if (!draft.length && r1.placed_ids?.every(id => id)) draft = [...r1.placed_ids];
+        if (draft.length !== cards.length || new Set(draft).size !== cards.length || draft.some(id => !cards.some(card => card.id === id))) draft = cards.map(card => card.id);
+        renderTimeline();
+      }
+      $('attempts').textContent = `${r1.attempts_left ?? 3 - (r1.attempts || 0)} attempts left`;
+    }
+    if (state.phase === 'round2') {
+      $('round1Outcome').textContent = r1.score === 2 ? 'Timeline restored. 2 marks recorded.' : 'Round 1 is over. Continue with the two cipher words.';
+      $('promptCount').textContent = `${r2.prompt_count || 0} prompts`;
+      $('qualitySummary').textContent = state.quality_status === 'reviewed' || state.quality_reviewed ? `${r2.quality_marks} / 4 marks, reviewed` : 'Prompt quality pending';
+      const nextWords = JSON.stringify(r2.words || []);
+      if (nextWords !== wordsSignature || oldPhase !== 'round2') { wordsSignature = nextWords; renderWords(r2.words || []); }
+    }
+    const history = state.prompt_history || r2.prompt_history || [];
+    const signature = JSON.stringify(history);
+    if (signature !== historySignature || oldPhase !== state.phase) { historySignature = signature; transcript($('chatHistory'), history); transcript($('finalTranscript'), history); }
+    if (state.phase === 'finished') {
+      scores($('finalScores'), state);
+      $('finishMessage').textContent = `${(r2.words || []).filter(word => word.solved).length} of 2 words decoded. Your timeline and word marks are saved.`;
+      $('qualityReviewStatus').textContent = state.quality_status === 'reviewed' || state.quality_reviewed ? 'The organiser has reviewed your prompt quality score.' : 'Prompt quality and the final score are pending. Organisers grade the saved transcript after this session ends.';
+    }
+    updateControls(); tick();
+  }
+  async function refresh(force = false) {
+    if (polling || busy || document.hidden || !force && Date.now() < nextPollAt) return;
+    polling = true;
+    nextPollAt = Date.now() + (current?.phase === 'finished' ? 15000 : 2500);
+    const version = mutationVersion;
+    const lastTurn = Math.max(0, ...(current?.prompt_history || []).map(entry => Number(entry.turn) || 0));
+    try { const result = await api.request(`/api/tg/session/status?history_after=${lastTurn}`); if (version === mutationVersion) render(unwrap(result)); $('connection').textContent = ''; }
+    catch (error) { $('connection').textContent = error.status === 401 ? 'This team access code is no longer valid. Return to Team details to resume with the correct code.' : `${error.message} Reconnecting automatically.`; }
+    finally { polling = false; }
+  }
+  async function mutate(path, body = {}, onSuccess) {
+    if (busy) return;
+    busy = true; mutationVersion++; $('gameError').textContent = ''; updateControls();
+    try {
+      const result = await api.request(path, {method:'POST', body});
+      if (result.ai_available === false) {
+        const error = new Error(result.error || 'Neither AI provider could answer. Your prompt is saved in the input. Retry shortly.');
+        error.state = result.state; error.details = result; throw error;
+      }
+      render(unwrap(result)); if (onSuccess) onSuccess(result); $('connection').textContent = ''; return true;
+    } catch (error) {
+      if (error.state) render(error.state);
+      const delay = Number(error.details?.ai_retry_after_seconds) || 0;
+      $('gameError').textContent = error.message + (error.details?.retryable && delay > 0 ? ` Retry in ${Math.ceil(delay)} seconds.` : '');
+      return false;
+    } finally { busy = false; updateControls(); if (current?.phase === 'round1') renderTimeline(); }
+  }
+  function tick() {
+    if (!current || !['round1','round2'].includes(current.phase)) return;
+    const remaining = Math.max(0, remainingAt - (performance.now() - receivedAt) / 1000);
+    $(`${current.phase}Timer`).textContent = format(Math.ceil(remaining));
+    if (!remaining) { updateControls(); refresh(); }
+  }
+  $('submitTimeline').onclick = () => mutate('/api/tg/round1/submit', {placed_ids:draft}, result => {
+    $('timelineFeedback').textContent = result.message || (current.phase === 'round1' ? 'The order is not correct. Rearrange the events and try again.' : 'Round 1 complete.');
+  });
+  $('promptForm').onsubmit = async event => {
+    event.preventDefault(); const message = $('promptInput').value.trim(); if (!message) return;
+    $('promptStatus').textContent = 'CHRONOS is responding...';
+    const ok = await mutate('/api/tg/round2/prompt', {message, target:Number($('targetWord').value)});
+    if (ok) $('promptInput').value = ''; $('promptStatus').textContent = ''; if (current?.phase === 'round2') $('promptInput').focus();
+  };
+  $('finishGame').onclick = () => {
+    if (window.confirm('Finish Round 2 now? You will keep your current marks and cannot send more prompts or word answers.')) mutate('/api/tg/round2/finish');
+  };
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(true); });
+  window.addEventListener('online', () => refresh(true));
+  setInterval(refresh, 2500); setInterval(tick, 250);
+  (async () => {
+    try { render(unwrap(await api.request('/api/tg/session/start', {method:'POST', body:{team_id:access.team?.team_id}}))); }
+    catch (error) { $('connection').textContent = `${error.message} Retrying automatically.`; }
+  })();
+})();

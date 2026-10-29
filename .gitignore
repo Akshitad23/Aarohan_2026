@@ -1,0 +1,70 @@
+.env
+.venv
+__pycache__
+
+# Secret files - ignore all files that may contain credentials or sensitive data
+*.env
+*.env.*
+*.pem
+*.key
+*.crt
+*.secret
+*.enc
+*.crypt
+secrets.yml
+secrets.json
+credentials.*
+!backend/.env.example
+*.db
+*.db-wal
+*.db-shm
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+backend/data/
+backend/private/
+backups/
+test-results/
+.id_rsa
+.id_rsa.pub
+
+# Jupyter Notebook files - can contain sensitive data
+*.ipynb
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+
+# Node.js files - if applicable
+node_modules/
+.npm/
+.yarn/
+
+# Package files
+*.deb
+*.rpm
+*.tar
+*.tar.gz
+*.zip
+*.egg
+*.whl
+*.gem
+
+# Logs
+*.log
+*.err
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE settings
+.idea/
+.vscode/
+*.swp
+
+# Temporary files
+tmp/
+temp/

@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: aarohan-timeglitch
+    runtime: python
+    plan: free
+    region: singapore
+    numInstances: 1
+    autoDeployTrigger: "off"
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && gunicorn --config gunicorn.conf.py app:app
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: REQUIRE_DATABASE_URL
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: DB_POOL_MAX
+        value: "4"
+      - key: ADMIN_PASSWORD
+        generateValue: true
+      - key: GROQ_API_KEY
+        sync: false
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: WEB_THREADS
+        value: "8"
+      - key: GROQ_RPM_LIMIT
+        value: "30"
+      - key: GROQ_TPM_LIMIT
+        value: "8000"
+      - key: GROQ_RPD_LIMIT
+        value: "1000"
+      - key: GROQ_TPD_LIMIT
+        value: "200000"
+      - key: GROQ_TEAM_MIN_INTERVAL
+        value: "60"
+      - key: GROQ_CONTEXT_BYTES
+        value: "2800"

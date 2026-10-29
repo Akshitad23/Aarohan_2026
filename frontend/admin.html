@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>
+      Event control | Aarohan '26
+    </title>
+    <link rel="preload" href="/assets/fonts/big-shoulders-display.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fonts/ibm-plex-sans.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/css/event.css">
+    <script defer src="/js/api.js">
+    </script>
+    <script defer src="/js/admin.js">
+    </script>
+  </head>
+  <body class="admin-page">
+    <header>
+      <div class="topbar">
+        <a class="brand" href="/admin">
+          <span class="brand-context">AAROHAN '26 · ORGANISER DASHBOARD</span>
+          <span class="brand-title">EVENT CONTROL</span>
+        </a>
+        <nav>
+          <a href="/" target="_blank" rel="noopener">
+            Registration
+          </a>
+          <button id="logout" class="secondary" type="button">
+            Log out
+          </button>
+        </nav>
+      </div>
+    </header>
+    <main>
+      <div class="eyebrow">
+        SESSION CONTROL
+      </div>
+      <h1>
+        Event control
+      </h1>
+      <div id="adminError" class="notice" role="alert">
+      </div>
+      <section class="panel">
+        <label for="batchSelect">Event session</label>
+        <select id="batchSelect" disabled></select>
+        <div class="actions">
+          <button id="activateBatch" class="secondary" type="button" disabled>Open registration for this session</button>
+          <span id="activeBatchStatus" class="muted"></span>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="row between">
+          <div>
+            <h2 id="eventState">
+              Connecting
+            </h2>
+            <p id="eventDetail" class="muted">
+            </p>
+            <p id="aiStatus" class="muted" role="status">
+              Checking AI status
+            </p>
+            <p id="aiBudgetStatus" class="muted" hidden>
+            </p>
+          </div>
+          <div class="row">
+            <button id="startEvent" type="button" disabled>
+              Start event for all teams
+            </button>
+            <button id="endEvent" class="danger" type="button" hidden>
+              End event
+            </button>
+          </div>
+        </div>
+      </section>
+      <div id="adminStats" class="scorebar">
+      </div>
+      <section class="panel">
+        <div class="row between">
+          <h2>
+            Teams and scores
+          </h2>
+          <div class="row">
+            <span id="syncStatus" class="muted" role="status">
+              Connecting
+            </span>
+            <button id="refresh" class="secondary" type="button">
+              Refresh
+            </button>
+            <button id="exportScores" class="secondary" type="button">
+              Export scores
+            </button>
+            <button id="exportExcel" class="secondary" type="button">
+              Export Excel
+            </button>
+            <button id="exportTeams" class="secondary" type="button">
+              Export registrations
+            </button>
+          </div>
+        </div>
+        <label for="teamSearch">
+          Find a team
+        </label>
+        <input id="teamSearch" type="search" placeholder="Team, school, or registration ID">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">
+                  Team
+                </th>
+                <th scope="col">
+                  School
+                </th>
+                <th scope="col">
+                  Status
+                </th>
+                <th scope="col">
+                  Timeline / 2
+                </th>
+                <th scope="col">
+                  Word 1 / 2
+                </th>
+                <th scope="col">
+                  Word 2 / 2
+                </th>
+                <th scope="col">
+                  Quality / 4
+                </th>
+                <th scope="col">
+                  Objective / 6
+                </th>
+                <th scope="col">
+                  Final / 10
+                </th>
+                <th scope="col">
+                  Review
+                </th>
+              </tr>
+            </thead>
+            <tbody id="teamsTable">
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section id="reviewPanel" class="panel" hidden>
+        <div class="row between">
+          <h2 id="reviewTeam">
+            Team transcript
+          </h2>
+          <button id="closeReview" type="button" class="secondary">
+            Close
+          </button>
+        </div>
+        <p id="reviewMetadata" class="muted">
+        </p>
+        <div class="game-grid">
+          <div id="transcript" class="transcript">
+          </div>
+          <div>
+            <h3>
+              Grade prompt quality
+            </h3>
+            <ul class="rubric">
+              <li>
+                Clear task and target word: 0 to 1.
+              </li>
+              <li>
+                Relevant context and use of cipher clues: 0 to 1.
+              </li>
+              <li>
+                Useful constraints and response format: 0 to 1.
+              </li>
+              <li>
+                Testing or evidence-based refinement: 0 to 1.
+              </li>
+            </ul>
+            <form id="reviewForm">
+              <label for="qualityScore">
+                Total prompt quality marks
+              </label>
+              <input id="qualityScore" type="number" min="0" max="4" step="0.25" required>
+              <label for="qualityReason">
+                Evidence and reason
+              </label>
+              <textarea id="qualityReason" required maxlength="1000" placeholder="Cite the relevant prompt turns and explain the four rubric marks.">
+              </textarea>
+              <p id="reviewError" class="message error" role="alert">
+              </p>
+              <div class="actions">
+                <button id="saveReview" type="submit">
+                  Save reviewed score
+                </button>
+              </div>
+            </form>
+            <p class="muted">
+              Use the same rubric for every team. Prompt volume and decoding speed do not add marks.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section id="rosterPanel" class="panel" hidden>
+        <div class="row between">
+          <h2 id="rosterTitle">
+            Team details
+          </h2>
+          <button id="closeRoster" class="secondary" type="button">
+            Close
+          </button>
+        </div>
+        <div id="rosterDetails">
+        </div>
+        <button id="recoverTeam" class="secondary" type="button">
+          Issue a new team resume code
+        </button>
+        <div id="recoveryArea" hidden>
+          <p>
+            Give this private code to the team. Their previous code no longer works.
+          </p>
+          <input id="recoveryCode" class="resume-code" readonly aria-label="New private team resume code">
+        </div>
+        <p id="recoveryError" class="message error" role="status">
+        </p>
+      </section>
+      <footer>
+        Scores update every 3 seconds. Grade prompt quality after the selected session ends.
+      </footer>
+    </main>
+  </body>
+</html>

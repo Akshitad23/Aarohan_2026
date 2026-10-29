@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>
+      Team registration | Aarohan '26
+    </title>
+    <link rel="preload" href="/assets/fonts/big-shoulders-display.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fonts/ibm-plex-sans.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/css/event.css">
+    <script defer src="/js/api.js">
+    </script>
+    <script defer src="/js/registration.js">
+    </script>
+  </head>
+  <body class="registration-page">
+    <header>
+      <div class="topbar">
+        <a class="brand" href="/">
+          <span class="brand-context">AAROHAN '26 · PROMPT ENGINEERING</span>
+          <span class="brand-title">TIMEGLITCH</span>
+        </a>
+        <nav>
+          <a href="/admin-login">
+            Organiser login
+          </a>
+        </nav>
+      </div>
+    </header>
+    <main class="narrow">
+      <div class="eyebrow">
+        EVENT REGISTRATION
+      </div>
+      <h1>
+        Register your team
+      </h1>
+      <p id="registrationBatch" class="message" role="status">
+        Checking the registration session
+      </p>
+      <div id="savedTeam" class="panel" hidden>
+        <h2 id="savedTeamName">
+          Your team
+        </h2>
+        <p id="savedTeamStatus">
+          You can continue from this laptop. Your progress and time limits are stored on the server.
+        </p>
+        <a id="continueTeam" class="button" href="/game">
+          Continue to event
+        </a>
+        <details>
+          <summary>
+            Move to another laptop
+          </summary>
+          <p>
+            Keep this private resume code. Anyone with it can access your team's game.
+          </p>
+          <input id="resumeCode" class="resume-code" readonly aria-label="Private team resume code">
+          <button type="button" id="copyCode" class="secondary">
+            Copy resume code
+          </button>
+        </details>
+      </div>
+      <section class="panel">
+        <form id="registrationForm">
+          <div class="grid">
+            <div>
+              <label for="teamName">
+                Team name
+              </label>
+              <input id="teamName" name="teamName" required maxlength="60" autocomplete="organization">
+            </div>
+            <div>
+              <label for="schoolName">
+                School name
+              </label>
+              <input id="schoolName" name="schoolName" required maxlength="150" autocomplete="organization">
+            </div>
+          </div>
+          <label for="teamSize">
+            Number of participants
+          </label>
+          <select id="teamSize" name="teamSize">
+            <option value="1">
+              1
+            </option>
+            <option value="2" selected>
+              2
+            </option>
+            <option value="3">
+              3
+            </option>
+            <option value="4">
+              4
+            </option>
+            <option value="5">
+              5
+            </option>
+            <option value="6">
+              6
+            </option>
+          </select>
+          <div id="participantsContainer" class="participants">
+          </div>
+          <p id="formMessage" class="message error" role="status">
+          </p>
+          <button type="submit" id="submitButton" disabled>
+            Register and join waiting room
+          </button>
+        </form>
+      </section>
+      <details class="panel">
+        <summary>
+          Resume with a private code
+        </summary>
+        <form id="resumeForm">
+          <label for="privateCode">
+            Team resume code
+          </label>
+          <input id="privateCode" class="resume-code" required autocomplete="off" spellcheck="false">
+          <p id="resumeError" class="message error" role="status">
+          </p>
+          <div class="actions">
+            <button type="submit">
+              Resume team
+            </button>
+          </div>
+        </form>
+      </details>
+      <footer>
+        Round 1: 2 marks. Each decoded word: 2 marks. Organisers grade prompt quality out of 4 after the session. Final total: 10 marks.
+      </footer>
+    </main>
+  </body>
+</html>
