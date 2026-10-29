@@ -117,9 +117,12 @@ def catalog():
 def get_challenge(team_id):
     """Choose once, then persist the selected puzzle with the team's session."""
     private_path = os.getenv("CIPHER_CATALOG_PATH", "").strip()
+    private_json = os.getenv("CIPHER_CATALOG_JSON", "").strip()
+    if private_path and private_json:
+        raise ValueError("Set either CIPHER_CATALOG_PATH or CIPHER_CATALOG_JSON, not both")
     challenges = catalog()
-    if private_path:
-        challenges = json.loads(Path(private_path).read_text(encoding="utf-8"))
+    if private_json or private_path:
+        challenges = json.loads(private_json) if private_json else json.loads(Path(private_path).read_text(encoding="utf-8"))
         if not isinstance(challenges, list) or not challenges:
             raise ValueError("Private cipher catalog must be a nonempty list")
         for challenge_index, challenge in enumerate(challenges):

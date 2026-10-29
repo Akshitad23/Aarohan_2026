@@ -40,7 +40,7 @@ One accepted model response is required before the planned hint is committed. If
 
 ## Private competition catalog
 
-Save a JSON file outside `frontend/` and the Git repository. Set `CIPHER_CATALOG_PATH` to its absolute path on the deployment server. Each entry needs exactly two words. The server computes the ciphertext, so the organizer does not have to type or maintain it.
+Save a JSON file outside `frontend/` and the Git repository. Set `CIPHER_CATALOG_PATH` to its absolute path on the deployment server, or store the JSON in the masked `CIPHER_CATALOG_JSON` environment variable. Set only one catalog source. Each entry needs exactly two words. The server computes the ciphertext, so the organizer does not have to type or maintain it.
 
 ```json
 [

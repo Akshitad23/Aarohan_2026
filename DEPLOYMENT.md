@@ -56,7 +56,7 @@ Render Free sleeps after 15 minutes without traffic. Open the app and admin befo
 
 Render's filesystem is temporary. Keep state in Neon and download each session's workbook. Exports contain student details and full transcripts, so keep them private. A scoring workbook does not replace a database backup.
 
-The built-in catalog and [cipher document](docs/CIPHERS.md) contain public rehearsal answers. For competition, add a fresh private catalog through Render Secret Files and set `CIPHER_CATALOG_PATH=/etc/secrets/ciphers.json`. Invalid catalogs stop startup. Use protocol pairs of comparable difficulty when ranking teams.
+The built-in catalog and [cipher document](docs/CIPHERS.md) contain public rehearsal answers. For competition, add a fresh private catalog as a masked `CIPHER_CATALOG_JSON` environment variable or through Render Secret Files with `CIPHER_CATALOG_PATH=/etc/secrets/ciphers.json`. Invalid catalogs stop startup. Use protocol pairs of comparable difficulty when ranking teams.
 
 ## Verify before admitting teams
 

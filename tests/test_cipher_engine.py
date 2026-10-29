@@ -40,6 +40,14 @@ class CipherTests(unittest.TestCase):
                     else:
                         self.assertEqual(get_challenge("team")["words"][0]["answer"], answer)
 
+    def test_private_catalog_accepts_masked_json_environment(self):
+        data = [{"id":"private","words":[{"answer":"ORBITAL","protocol":"caesar","key":4},{"answer":"CAPSULE","protocol":"atbash"}]}]
+        with patch.dict("os.environ", {"CIPHER_CATALOG_PATH":"", "CIPHER_CATALOG_JSON":json.dumps(data)}):
+            self.assertEqual(get_challenge("team")["words"][0]["answer"], "ORBITAL")
+        with patch.dict("os.environ", {"CIPHER_CATALOG_PATH":"/unused", "CIPHER_CATALOG_JSON":json.dumps(data)}):
+            with self.assertRaises(ValueError):
+                get_challenge("team")
+
     def test_explicit_finish_freezes_round_one(self):
         game = TimeglitchSession("t", "Team")
         game.is_finished = True

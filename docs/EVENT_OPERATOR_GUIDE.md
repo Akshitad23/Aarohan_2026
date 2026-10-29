@@ -30,7 +30,7 @@ Other laptops must open the host laptop's network address, not `localhost`. The 
 
 ## Use the hosted server
 
-The hosting configuration targets a Render Free web service connected to the event's Neon Postgres database. Hosted startup requires `DATABASE_URL`; it refuses to run against Render's temporary local filesystem. The app uses Gunicorn on Render. The Render service and public URL are not yet confirmed as deployed, and the Neon application connection and live restart recovery remain outstanding. Do not send teams a URL until the readiness checks in [READINESS.md](READINESS.md) and [DEPLOYMENT.md](../DEPLOYMENT.md) pass.
+The hosted event URL is [ai-think-hack-create.onrender.com](https://ai-think-hack-create.onrender.com). Render runs the Flask app with Gunicorn, and Neon Postgres stores event data. Hosted startup requires `DATABASE_URL` and refuses to use Render's temporary local filesystem. The Render service and database health check are live. Before admitting teams, complete the rehearsal and remaining checks in [READINESS.md](READINESS.md) and [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 When the service is available, check `/api/health` and confirm that storage reports Postgres. Sign in at `/admin-login`, open `/admin`, and check that the correct session is selected. Open the team URL from a second device and verify that it reaches the same event. Render Free can sleep when idle, so open the site and admin before registration and allow the service to wake.
 
@@ -38,7 +38,7 @@ When the service is available, check `/api/health` and confirm that storage repo
 
 1. Confirm the correct deployment URL and that `/api/health` reports Postgres for the hosted event.
 2. Sign in to the admin page. Check the AI status and remaining budget. A configured key is not proof of a successful live reply; run a team rehearsal prompt and check its response.
-3. Verify the intended cipher catalog is active. The repository's public catalog is rehearsal data. The private competition catalog is local and is not active until it is configured in the hosting environment.
+3. Verify the private competition catalog is active. It is configured in Render as the masked `CIPHER_CATALOG_JSON` environment variable. Do not paste its contents into a student-facing page or public repository.
 4. Select Morning or Afternoon and open registration for that session. Do not use an old team's resume code for a different session.
 5. Register a test team and confirm it waits in the lobby. Check team names, schools and participant counts in admin.
 6. Start the session once, when all teams are ready. This starts the five-minute timeline clock for all registered teams together. Tell teams that the server clock continues if they refresh or leave the tab.
@@ -70,4 +70,4 @@ For the hosted event, download each session's workbook and arrange a database ba
 
 ## Current release checks
 
-Automated application and frontend checks are recorded in [VERIFICATION.md](VERIFICATION.md). The cloud deployment, live Neon connection and recovery after a hosted restart, competition catalog activation, real browser layout review, venue network rehearsal and sustained AI capacity for 30 to 40 teams still need live checks. See [READINESS.md](READINESS.md) for the completion criteria. Free provider capacity can run out during a burst; a retryable AI error does not pause the event clock.
+Automated application and frontend checks are recorded in [VERIFICATION.md](VERIFICATION.md). The hosted database health check and private catalog configuration are complete. A real model reply from the hosted deployment, data recovery after a hosted restart, venue network rehearsal, and sustained AI capacity for 30 to 40 teams still need live checks. See [READINESS.md](READINESS.md) for the completion criteria. Free provider capacity can run out during a burst; a retryable AI error does not pause the event clock.
