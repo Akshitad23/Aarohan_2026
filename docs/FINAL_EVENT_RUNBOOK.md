@@ -8,7 +8,7 @@ The public event runs from Render and stores state in Neon Postgres. The deploye
 
 The fallback launcher uses the same Neon production database as Render. It checks the database and catalog before it starts and refuses to silently use SQLite. Keep this project folder, `.venv`, `backend/.env.event`, and the private catalog on the organizer laptop. Keep the laptop plugged in and prevent it from sleeping during both sessions.
 
-Ollama and `gemma3:4b` are installed on this laptop. The fallback config uses that local model when Groq cannot provide a response. A direct model response and the app's Groq-to-Ollama fallback path were tested. Test the laptop's Wi-Fi address from another device at the venue before event day.
+Ollama and `gemma3:4b` are installed on the organizer laptop only. That laptop runs both the website and the model during fallback. Participant machines need only a web browser; they connect to the laptop over venue Wi-Fi and send their prompts to its local app. They do not install Ollama. Render cannot reach Ollama at the laptop's `127.0.0.1`, so if Groq is unavailable while using Render, move all teams and the admin to the laptop-hosted site. A direct model response and the app's Groq-to-Ollama fallback path were tested. Test the laptop's Wi-Fi address from another device at the venue before event day.
 
 ## 2. Rehearse admin and participant flows safely
 
@@ -96,7 +96,7 @@ Use the Windows fallback if the public site remains unavailable for more than tw
 ### Provider and database failures
 
 - **Groq returns an authentication error:** the key may be invalid or revoked. Replace it with a valid authorized key. Updating Render settings can restart the service, so do not rotate it casually during a live session. On the laptop, local Ollama is already available.
-- **Groq returns 429, quota exhaustion, or a provider outage:** a new key from the same organization will not increase its organization limit. Do not rotate accounts to bypass the limit. Switch all teams to the laptop fallback; it can answer with `gemma3:4b` locally after Groq fails.
+- **Groq returns 429, quota exhaustion, or a provider outage:** a new key from the same organization will not increase its organization limit. Do not rotate accounts to bypass the limit. Switch all teams to the organizer laptop-hosted site; that app can answer with the laptop's `gemma3:4b` model after Groq fails. Student devices need only a browser and access to the laptop's Wi-Fi address.
 - **Both Groq and Ollama fail:** tell teams to stop submitting prompts and notify the organizer. The current app has no global pause control, so the Part B clock continues. If model recovery is not immediate, stop the session operationally and record the outage and affected teams; decide a fair continuation with the event lead.
 - **Neon is unavailable:** neither Render nor the laptop can save shared progress. Stop play and record unfinished work offline. Do not start SQLite as a substitute during competition; that would split the teams and scores into a separate database.
 - **Venue internet is lost:** the laptop Ollama can still generate text, but the shared Neon database requires internet. Without Neon, the app cannot safely continue the event.

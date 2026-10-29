@@ -1,6 +1,6 @@
 # Windows laptop fallback
 
-Use this only if the public Render app is unavailable. The organizer laptop runs the same application and connects to the same Neon production database. That preserves the teams' existing progress. A local SQLite database is not a valid fallback.
+Use this when Render is unavailable or when Groq is failing and you need the local Ollama model. Ollama runs only on the organizer laptop; the laptop serves both the website and model. Students need only a browser and venue Wi-Fi access to the laptop's address. Render cannot reach Ollama on the laptop through `127.0.0.1`. The organizer laptop connects to the same Neon production database, preserving teams' existing progress. A local SQLite database is not a valid fallback.
 
 ## Prepare before event day
 
