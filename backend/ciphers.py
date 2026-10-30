@@ -17,6 +17,18 @@ def technique_groups(index):
     return [list(rotated[:3]), list(rotated[3:])]
 
 
+def harder_second_word(answer, protocol, key):
+    """Use a substitution that cannot be solved by rearranging the same letters."""
+    if protocol not in ('caesar', 'atbash', 'rot13'):
+        protocol, key = 'caesar', 5
+    if sorted(transform(answer, protocol, key)) == sorted(answer):
+        for shift in range(1, 26):
+            if sorted(transform(answer, 'caesar', shift)) != sorted(answer):
+                return 'caesar', shift
+        raise ValueError('Cannot construct a substitution cipher for this word')
+    return protocol, key
+
+
 def transform(text, protocol, key=0, decode=False):
     """Encode/decode the deliberately small classical cipher set."""
     text = text.upper()
@@ -108,6 +120,8 @@ def catalog():
         for number, (answer, protocol, key) in enumerate(pair, 1):
             if number == 1:
                 protocol, key = 'a1z26', 0
+            else:
+                protocol, key = harder_second_word(answer, protocol, key)
             words.append({"id": "one" if number == 1 else "two", "answer": answer,
                           "protocol": protocol, "key": key,
                           "techniques": technique_groups(index - 1)[number - 1],
@@ -139,6 +153,8 @@ def get_challenge(team_id, *, practice_session=False):
                 word["key"] = int(word.get("key", 0))
                 if word["protocol"] == "caesar" and not 1 <= word["key"] <= 25:
                     raise ValueError("Caesar keys must be from 1 through 25")
+                if index == 1:
+                    word['protocol'], word['key'] = harder_second_word(word['answer'], word['protocol'], word['key'])
                 word["ciphertext"] = transform(word["answer"], word["protocol"], word["key"])
                 word.setdefault("techniques", technique_groups(challenge_index)[index])
                 if (not isinstance(word["techniques"], list) or len(word["techniques"]) != 3

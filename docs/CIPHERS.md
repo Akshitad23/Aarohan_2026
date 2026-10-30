@@ -1,23 +1,23 @@
 # Cipher catalog for organizers
 
-Each team receives two encrypted words. Word 1 uses the easier A1Z26 number cipher; Word 2 retains its configured protocol. The server chooses a combination randomly once and stores that assignment with the session. Reconnecting or changing workers preserves it. A public team ID does not predict the combination.
+Each team receives two encrypted words. Word 1 uses the easier A1Z26 number cipher; Word 2 uses a substitution cipher, with letter rearrangement protocols replaced by Caesar; the encoded letters are checked to ensure they are not an anagram of the answer. The server chooses a combination randomly once and stores that assignment with the session. Reconnecting or changing workers preserves it. A public team ID does not predict the combination.
 
 The supplied catalog is suitable for rehearsal. This repository and this document contain its answers. Use a private catalog for the competition and keep this document away from participant laptops. Browser responses contain ciphertext and released hints, never the answer fields.
 
 | ID | First word | First ciphertext | First protocol | Second word | Second ciphertext | Second protocol |
 | --- | --- | --- | --- | --- | --- | --- |
-| TG-01 | ROVER | 18-15-22-5-18 | A1Z26 | READY | IVZWB | Atbash |
-| TG-02 | LUNAR | 12-21-14-1-18 | A1Z26 | ORBIT | LIYRG | Atbash |
-| TG-03 | SOLAR | 19-15-12-1-18 | A1Z26 | FLARE | ERALF | Reversal |
-| TG-04 | COMET | 3-15-13-5-20 | A1Z26 | TRAIL | YWFNQ | Caesar, forward 5 |
-| TG-05 | SPACE | 19-16-1-3-5 | A1Z26 | PROBE | CEBOR | ROT13 |
-| TG-06 | EARTH | 5-1-18-20-8 | A1Z26 | VENUS | IRAHF | ROT13 |
-| TG-07 | RADIO | 18-1-4-9-15 | A1Z26 | WAVES | SEVAW | Reversal |
-| TG-08 | NOVA | 14-15-22-1 | A1Z26 | STAR | BCJA | Caesar, forward 9 |
-| TG-09 | COSMIC | 3-15-19-13-9-3 | A1Z26 | SIGNAL | 19-9-7-14-1-12 | A1Z26 |
-| TG-10 | GALAXY | 7-1-12-1-24-25 | A1Z26 | NEBULA | NBLEUA | Odd-even transposition |
-| TG-11 | LAUNCH | 12-1-21-14-3-8 | A1Z26 | MODULE | SUJARK | Caesar, forward 6 |
-| TG-12 | SATURN | 19-1-20-21-18-14 | A1Z26 | METEOR | NVGVLI | Atbash |
+| TG-01 | ROVER | 18-15-22-5-18 | A1Z26 | READY | IVZWB | Atbash cipher |
+| TG-02 | LUNAR | 12-21-14-1-18 | A1Z26 | ORBIT | LIYRG | Atbash cipher |
+| TG-03 | SOLAR | 19-15-12-1-18 | A1Z26 | FLARE | KQFWJ | Caesar cipher, forward 5 |
+| TG-04 | COMET | 3-15-13-5-20 | A1Z26 | TRAIL | YWFNQ | Caesar cipher, forward 5 |
+| TG-05 | SPACE | 19-16-1-3-5 | A1Z26 | PROBE | CEBOR | ROT13 cipher |
+| TG-06 | EARTH | 5-1-18-20-8 | A1Z26 | VENUS | IRAHF | ROT13 cipher |
+| TG-07 | RADIO | 18-1-4-9-15 | A1Z26 | WAVES | BFAJX | Caesar cipher, forward 5 |
+| TG-08 | NOVA | 14-15-22-1 | A1Z26 | STAR | BCJA | Caesar cipher, forward 9 |
+| TG-09 | COSMIC | 3-15-19-13-9-3 | A1Z26 | SIGNAL | XNLSFQ | Caesar cipher, forward 5 |
+| TG-10 | GALAXY | 7-1-12-1-24-25 | A1Z26 | NEBULA | SJGZQF | Caesar cipher, forward 5 |
+| TG-11 | LAUNCH | 12-1-21-14-3-8 | A1Z26 | MODULE | SUJARK | Caesar cipher, forward 6 |
+| TG-12 | SATURN | 19-1-20-21-18-14 | A1Z26 | METEOR | NVGVLI | Atbash cipher |
 
 Caesar keys above describe encoding. Students reverse the shift to decode. Atbash pairs A/Z, B/Y, continuing inward. ROT13 shifts by 13 positions. Reversal reads the word backward. A1Z26 maps A=1 through Z=26, with hyphens separating numbers. Odd-even transposition encodes the letters in odd positions followed by the letters in even positions, using positions starting at 1.
 
@@ -54,7 +54,7 @@ Save a JSON file outside `frontend/` and the Git repository. Set `CIPHER_CATALOG
 ]
 ```
 
-Answers must contain 3 to 16 uppercase ASCII letters. Protocol IDs are `caesar`, `atbash`, `rot13`, `reverse`, `a1z26`, and `odd_even`. Word 1 is assigned A1Z26 regardless of the catalog protocol. Word 2 keeps its configured protocol. Caesar keys must be 1 through 25. Other protocols ignore the optional key. The server rejects an answer that already appears in either word's ciphertext or protocol teaching text. Worked examples avoid both challenge answers. Session persistence stores the chosen puzzle, so changing the catalog does not alter teams already playing.
+Answers must contain 3 to 16 uppercase ASCII letters. Protocol IDs are `caesar`, `atbash`, `rot13`, `reverse`, `a1z26`, and `odd_even`. Word 1 is assigned A1Z26 regardless of the catalog protocol. Word 2 keeps Caesar, Atbash or ROT13 when its encrypted letters are not an anagram of the answer; other protocols are replaced with a Caesar shift. Caesar keys must be 1 through 25. Other protocols ignore the optional key. The server rejects an answer that already appears in either word's ciphertext or protocol teaching text. Worked examples avoid both challenge answers. Session persistence stores the chosen puzzle, so changing the catalog does not alter teams already playing.
 
 Private entries receive the same rotating technique groups automatically. To set them explicitly, add a `techniques` array with exactly three supported technique IDs to each word. Both groups must be disjoint and cover all six techniques. The selected mapping persists with the session.
 

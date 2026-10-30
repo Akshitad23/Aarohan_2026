@@ -25,6 +25,9 @@ class CipherTests(unittest.TestCase):
         self.assertEqual(len({p["id"] for p in puzzles}), 12)
         for puzzle in puzzles:
             self.assertEqual(puzzle["words"][0]["protocol"], "a1z26")
+            second = puzzle["words"][1]
+            self.assertIn(second["protocol"], ("caesar", "atbash", "rot13"))
+            self.assertNotEqual(sorted(second["answer"]), sorted(second["ciphertext"]))
             for word in puzzle["words"]:
                 self.assertEqual(transform(word["ciphertext"], word["protocol"], word["key"], decode=True), word["answer"])
                 self.assertIn("Example:", clue_for(word, 3))
