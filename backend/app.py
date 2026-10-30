@@ -214,6 +214,11 @@ def event_end():
 def event_activate():
     return jsonify(event=service.activate_batch(body().get('batch_id')))
 
+@app.post('/api/admin/event/new-test')
+@admin_required
+def event_new_test():
+    return jsonify(event=service.create_test_run())
+
 @app.get('/api/admin/teams')
 @admin_required
 def admin_teams():

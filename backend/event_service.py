@@ -35,7 +35,7 @@ def event_state(conn, batch_id=None):
             'started_at': row['started_at'], 'ended_at': row['ended_at']}
 
 def list_batches(conn):
-    return [event_state(conn, row['batch_id']) for row in conn.execute("SELECT batch_id FROM event_sessions ORDER BY CASE batch_id WHEN 'pretest' THEN 0 WHEN 'test' THEN 1 WHEN 'morning' THEN 2 WHEN 'afternoon' THEN 3 ELSE 4 END,batch_id")]
+    return [event_state(conn, row['batch_id']) for row in conn.execute("SELECT batch_id FROM event_sessions ORDER BY CASE WHEN batch_id='pretest' THEN 0 WHEN batch_id='test' OR batch_id LIKE 'test-%' THEN 1 WHEN batch_id='morning' THEN 2 WHEN batch_id='afternoon' THEN 3 ELSE 4 END,batch_id")]
 
 def team_dict(row, private=False):
     result = {'team_id': row['team_id'], 'team_name': row['team_name'], 'school_name': row['school_name'],
@@ -417,6 +417,20 @@ def end_event(batch_id=None):
                 save(conn,engine)
         return event
 
+
+def create_test_run():
+    with transaction() as conn:
+        current = event_state(conn)
+        occupied = conn.execute('SELECT COUNT(*) FROM teams WHERE batch_id=?', (current['batch_id'],)).fetchone()[0]
+        if current['status'] == 'running' or (current['status'] == 'waiting' and occupied):
+            raise EventError('Close the current session before opening another test.', 409)
+        if event_state(conn, 'test')['status'] != 'ended':
+            raise EventError('Finish the existing Test session first.', 409)
+        count = conn.execute("SELECT COUNT(*) FROM event_sessions WHERE batch_id='test' OR batch_id LIKE 'test-%'").fetchone()[0]
+        batch_id = 'test-' + secrets.token_hex(8)
+        conn.execute('INSERT INTO event_sessions(batch_id,name) VALUES(?,?)', (batch_id, f'Test {count + 1}'))
+        conn.execute('UPDATE event SET active_batch_id=? WHERE id=1', (batch_id,))
+        return event_state(conn)
 
 def activate_batch(batch_id):
     if not isinstance(batch_id,str) or not batch_id:

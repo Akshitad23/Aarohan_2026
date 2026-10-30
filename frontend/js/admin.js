@@ -50,6 +50,8 @@
     $('activeBatchStatus').textContent = `Registration session: ${registrationEvent.name || 'loading'}`;
     $('activateBatch').hidden = active || ended;
     $('activateBatch').disabled = changingEvent || !waiting || registrationEvent.status === 'running';
+    $('newTest').hidden = !ended || !(selectedBatchId === 'test' || selectedBatchId.startsWith('test-'));
+    $('newTest').disabled = changingEvent || registrationEvent.status === 'running';
     $('startEvent').hidden = !active || !waiting;
     $('startEvent').disabled = changingEvent || !active || !waiting;
     $('startEvent').textContent = `Start ${batchName(selectedBatchId)} for all teams`;
@@ -183,6 +185,18 @@
     } catch (error) { checkAuth(error); $('adminError').textContent = error.message; }
   }
   $('activateBatch').onclick = () => changeEvent('activate');
+  $('newTest').onclick = async () => {
+    if (!window.confirm('Open a new test session? Previous test records will remain available.')) return;
+    $('newTest').disabled = true;
+    try {
+      const result = await api.request('/api/admin/event/new-test', {method:'POST', admin:true, body:{}});
+      selectedBatchId = result.event.batch_id;
+      selectionVersion++; rosterLoaded = false; teams = []; sessions = []; event = {}; tableSignature = '';
+      reviewVersion++; rosterVersion++; reviewId = null; rosterTeam = null;
+      $('reviewPanel').hidden = true; $('rosterPanel').hidden = true;
+      await refresh();
+    } catch (error) { checkAuth(error); $('adminError').textContent = error.message; $('newTest').disabled = false; }
+  };
   $('startEvent').onclick = () => changeEvent('start');
   $('endEvent').onclick = () => { if (window.confirm(`End the ${batchName(selectedBatchId)} session? Its teams cannot continue, and its results will be available for grading.`)) changeEvent('end'); };
   $('refresh').onclick = refresh; $('teamSearch').oninput = renderTable;

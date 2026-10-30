@@ -19,6 +19,23 @@ from grade_reviews import read_reviews
 from timeglitch_engine import TimeglitchSession
 
 class BatchTests(unittest.TestCase):
+    def test_new_test_preserves_old_results_and_uses_practice_ciphers(self):
+        private=[{'id':'competition','words':[{'answer':'PRIVATE','protocol':'caesar','key':2},{'answer':'ANSWERS','protocol':'atbash'}]}]
+        with patch.dict('os.environ',{'CIPHER_CATALOG_JSON':json.dumps(private),'CIPHER_CATALOG_PATH':''}):
+            service.activate_batch('test')
+            previous=self.register('Previous team','test')
+            service.start_event('test')
+            service.end_event('test')
+            new=service.create_test_run()
+            self.assertEqual(new['name'],'Test 2')
+            team=self.register('New team',new['batch_id'])
+            self.assertNotEqual([w['answer'] for w in self.engine(team).challenge['words']],['PRIVATE','ANSWERS'])
+            self.assertEqual(service.admin_sessions('test')['total'],1)
+            self.assertEqual(service.get_state(previous['team_token'])['event']['status'],'ended')
+            self.assertEqual(service.admin_sessions(new['batch_id'])['total'],1)
+            service.start_event(new['batch_id'])
+            with self.assertRaises(service.EventError): service.create_test_run()
+
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
