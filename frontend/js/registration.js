@@ -2,7 +2,7 @@
 (() => {
   const api = EventAPI;
   const $ = id => document.getElementById(id);
-  const saved = api.team();
+  let saved = api.team();
   let registrationEvent = null;
   let submitting = false;
   let savedBatchName = saved?.team?.batch_name || saved?.team?.batch_id || '';
@@ -18,12 +18,19 @@
     catch (error) { $('registrationBatch').textContent = error.message; $('submitButton').disabled = true; }
   }
   if (saved?.token) {
-    $('savedTeam').hidden = false;
-    $('savedTeamName').textContent = saved.team?.team_name || 'Your registered team';
     api.request('/api/tg/session/status?history_after=1000000', {token:saved.token}).then(state => {
+      if (api.team()?.token !== saved?.token) return;
+      if (state.phase === 'finished') {
+        api.clearTeam(saved.token);
+        saved = null; savedBatchName = '';
+        $('savedTeam').hidden = true;
+        return;
+      }
+      $('savedTeam').hidden = false;
+      $('savedTeamName').textContent = saved.team?.team_name || 'Your registered team';
       savedBatchName = state.event?.name || state.event?.batch_id || savedBatchName;
       $('savedTeamStatus').textContent = `${savedBatchName} session`;
-      $('continueTeam').textContent = state.phase === 'finished' ? `View ${savedBatchName} results` : `Continue ${savedBatchName}`;
+      $('continueTeam').textContent = `Continue ${savedBatchName}`;
     }).catch(() => { $('savedTeamStatus').textContent = 'Ask the organiser if you cannot resume your team.'; });
   }
   $('generateResumeCode').onclick = async event => {
@@ -88,6 +95,7 @@
     } catch (error) { $('resumeError').textContent = error.message; }
     finally { button.disabled = false; }
   };
+  window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshRegistration(); });
   setInterval(refreshRegistration, 10000); refreshRegistration();
 })();

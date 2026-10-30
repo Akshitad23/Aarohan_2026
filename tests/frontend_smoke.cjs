@@ -31,6 +31,11 @@ function page(script, access = {}) {
   vm.runInContext(source('api.js'), context);
   context.EventAPI = window.EventAPI;
   context.EventAPI.team = () => access.team;
+  context.EventAPI.clearTeam = token => {
+    if (access.team?.token !== token) return false;
+    delete access.team;
+    return true;
+  };
   context.EventAPI.admin = () => access.admin;
   return {get:id => document.getElementById(id), api:context.EventAPI, context, window, listeners, windowListeners, timers, redirects, downloads, created, run:() => vm.runInContext(source(script), context)};
 }
@@ -80,6 +85,10 @@ async function gameChecks() {
   latest = state('finished', true); latest.prompt_history = [];
   test.listeners.visibilitychange(); await settle();
   assert.equal(test.get('finishedHeading').focusCount, 1, 'A new phase should focus its heading once.');
+  assert.equal(test.api.team(), undefined, 'Completed teams must be removed from saved browser access.');
+  assert.equal(test.get('chatHistory').textContent, '', 'Completion must clear the previous chat.');
+  assert.equal(test.get('words').textContent, '', 'Completion must clear previous answers.');
+  assert.equal(test.get('teamName').textContent, '', 'Completion must clear the team name.');
   console.log('Game: failed-provider draft retention, backup identity, and completion pass.');
 }
 
@@ -119,14 +128,15 @@ async function registrationChecks() {
   };
   test.run(); await settle();
   assert.match(test.get('registrationBatch').textContent, /Afternoon/);
-  assert.match(test.get('savedTeamStatus').textContent, /Morning/);
+  assert.equal(test.get('savedTeam').hidden, true);
+  assert.equal(test.api.team(), undefined, 'Returning after completion clears stale saved team access.');
   test.get('teamName').value = 'Afternoon team'; test.get('schoolName').value = 'Test school';
   test.get('participantsContainer').querySelectorAll('input').forEach(input => { input.value = 'Participant'; });
   test.get('participantsContainer').querySelectorAll('select').forEach(select => { select.value = '10'; });
   await test.get('registrationForm').onsubmit({preventDefault() {}});
   assert.equal(registrationBody.batch_id, 'afternoon');
   assert.equal(test.redirects.at(-1), '/game');
-  console.log('Registration: Morning access remains identified and new registration binds explicitly to Afternoon.');
+  console.log('Registration: finished Morning access is cleared and fresh registration binds to Afternoon.');
 }
 
 async function adminChecks() {

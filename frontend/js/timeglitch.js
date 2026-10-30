@@ -95,9 +95,20 @@
     renderVersion++;
     state.prompt_history = api.mergeHistory(current?.prompt_history || [], state.prompt_history || state.round2?.prompt_history || [], state.prompt_history_complete !== false);
     const oldPhase = current?.phase; current = state;
+    if (state.phase === 'finished') {
+      api.clearTeam(teamToken);
+      localStorage.removeItem(draftKey);
+      $('teamName').textContent = '';
+      $('chatHistory').replaceChildren();
+      $('words').replaceChildren();
+      $('promptInput').value = '';
+      state.prompt_history = [];
+      if (state.round2) state.round2.prompt_history = [];
+      accessChanged = true;
+    }
     receivedAt = performance.now(); remainingAt = Number((state.phase === 'round1' ? state.round1 : state.round2)?.remaining_seconds || 0);
     for (const phase of ['waiting', 'round1', 'round2', 'finished']) $(phase).hidden = state.phase !== phase;
-    if (state.team?.team_name || state.team_name) $('teamName').textContent = [state.team?.team_name || state.team_name, state.event?.name].filter(Boolean).join(' / ');
+    if (state.phase !== 'finished' && (state.team?.team_name || state.team_name)) $('teamName').textContent = [state.team?.team_name || state.team_name, state.event?.name].filter(Boolean).join(' / ');
     const r1 = state.round1 || {}; const r2 = state.round2 || {};
     if (state.phase === 'round1') {
       cards = r1.milestones || [];
@@ -166,6 +177,9 @@
     if (window.confirm('Finish Round 1: Part B now? Your responses will be saved and you cannot send more prompts or word answers.')) mutate('/api/tg/round2/finish');
   };
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(true); });
+  window.addEventListener('pageshow', event => {
+    if (event.persisted && api.team()?.token !== teamToken) location.replace('/');
+  });
   window.addEventListener('online', () => refresh(true));
   window.addEventListener('storage', event => {
     if ((event.key === 'aarohan_team_access' || event.key === null) && api.team()?.token !== teamToken) {

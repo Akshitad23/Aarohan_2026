@@ -28,6 +28,11 @@ window.EventAPI = (() => {
     } finally { clearTimeout(timer); }
   }
   function saveTeam(team, token) { localStorage.setItem(TEAM_KEY, JSON.stringify({team, token})); }
+  function clearTeam(token) {
+    if (read(TEAM_KEY)?.token !== token) return false;
+    localStorage.removeItem(TEAM_KEY);
+    return true;
+  }
   function saveAdmin(token) { localStorage.setItem(ADMIN_KEY, JSON.stringify({token})); }
   function node(tag, text, className) {
     const element = document.createElement(tag);
@@ -72,5 +77,5 @@ window.EventAPI = (() => {
     incoming.forEach(entry => turns.set(entry.turn, entry));
     return [...turns.values()].sort((a, b) => a.turn - b.turn);
   }
-  return {request, saveTeam, saveAdmin, team: () => read(TEAM_KEY), admin: () => read(ADMIN_KEY), logout: () => localStorage.removeItem(ADMIN_KEY), node, aiLabel, aiNote, mergeHistory};
+  return {request, saveTeam, clearTeam, saveAdmin, team: () => read(TEAM_KEY), admin: () => read(ADMIN_KEY), logout: () => localStorage.removeItem(ADMIN_KEY), node, aiLabel, aiNote, mergeHistory};
 })();
