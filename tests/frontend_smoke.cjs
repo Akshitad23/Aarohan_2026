@@ -16,6 +16,7 @@ class Element {
   }
   querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
   setAttribute(name, value) { this[name] = value; }
+  getBoundingClientRect() { return {left:0,top:0,width:500,height:100}; }
   focus() { this.focusCount = (this.focusCount || 0) + 1; } scrollIntoView() {} select() {} click() { this.clicked = true; }
 }
 
@@ -120,8 +121,9 @@ async function timelineChecks() {
   assert.equal(test.get('attempts').textContent, '3 attempts left');
   assert.equal(test.get('timeline').children.length, 5);
   const first = test.get('timeline').children[0], second = test.get('timeline').children[1];
-  const dataTransfer = {setData() {}, effectAllowed:'', dropEffect:''};
-  first.children[0].ondragstart({dataTransfer, preventDefault() {}});
+  const dataTransfer = {setData() {}, setDragImage(node) { this.dragImage = node; }, effectAllowed:'', dropEffect:''};
+  first.children[0].ondragstart({dataTransfer, clientX:10, clientY:10, preventDefault() {}});
+  assert.equal(dataTransfer.dragImage, first, 'The whole card must follow the drag.');
   second.ondrop({dataTransfer, preventDefault() {}});
   assert.equal(test.get('timeline').children[0].dataset.cardId, 'card-1');
   await test.get('submitTimeline').onclick();

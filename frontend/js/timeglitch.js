@@ -28,6 +28,7 @@
   if (!access?.token) { location.replace('/'); return; }
   const teamToken = access.token;
   let draggingId = null;
+  let dragTarget = null, touchGhost = null;
   $('teamName').textContent = access.team?.team_name || 'Your team';
 
   function moveCard(fromId, toId) {
@@ -37,6 +38,18 @@
     draft.splice(to, 0, draft.splice(from, 1)[0]);
     localStorage.setItem(draftKey, JSON.stringify(draft));
     renderTimeline();
+  }
+
+  function markDragTarget(row) {
+    if (dragTarget === row) return;
+    dragTarget?.classList.remove('drop-target');
+    dragTarget = row;
+    dragTarget?.classList.add('drop-target');
+  }
+  function clearDrag() {
+    markDragTarget(null);
+    touchGhost?.remove(); touchGhost = null;
+    draggingId = null;
   }
 
   function renderTimeline() {
@@ -55,17 +68,39 @@
         draggingId = id;
         event.dataTransfer.effectAllowed = 'move';
         event.dataTransfer.setData('text/plain', id);
+        const bounds = row.getBoundingClientRect();
+        event.dataTransfer.setDragImage(row, Math.max(0, event.clientX - bounds.left), Math.max(0, event.clientY - bounds.top));
       };
-      handle.ondragend = () => { draggingId = null; };
-      handle.ontouchstart = event => { if (!busy && current?.phase === 'round1') { draggingId = id; event.preventDefault(); } };
+      handle.ondragend = clearDrag;
+      handle.ontouchstart = event => {
+        if (busy || current?.phase !== 'round1') return;
+        draggingId = id; event.preventDefault();
+        const bounds = row.getBoundingClientRect();
+        touchGhost = row.cloneNode(true);
+        touchGhost.classList.add('drag-ghost');
+        touchGhost.style.width = `${bounds.width}px`;
+        document.body.append(touchGhost);
+        const touch = event.touches[0];
+        touchGhost.style.left = `${bounds.left}px`;
+        touchGhost.style.top = `${touch.clientY - bounds.height / 2}px`;
+      };
+      handle.ontouchmove = event => {
+        if (!draggingId || !touchGhost) return;
+        event.preventDefault();
+        const touch = event.touches[0];
+        touchGhost.style.top = `${touch.clientY - touchGhost.offsetHeight / 2}px`;
+        const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.timeline li');
+        markDragTarget(target && target.dataset.cardId !== draggingId ? target : null);
+      };
       handle.ontouchend = event => {
         const touch = event.changedTouches[0];
         const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.timeline li');
         if (draggingId && target) moveCard(draggingId, target.dataset.cardId);
-        draggingId = null;
+        clearDrag();
       };
-      row.ondragover = event => { if (draggingId) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; } };
-      row.ondrop = event => { event.preventDefault(); if (draggingId) moveCard(draggingId, id); draggingId = null; };
+      handle.ontouchcancel = clearDrag;
+      row.ondragover = event => { if (draggingId) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; markDragTarget(id !== draggingId ? row : null); } };
+      row.ondrop = event => { event.preventDefault(); if (draggingId) moveCard(draggingId, id); clearDrag(); };
       copy.append(api.node('strong', card.title));
       if (card.description) copy.append(api.node('p', card.description));
       const controls = api.node('div', undefined, 'move');
