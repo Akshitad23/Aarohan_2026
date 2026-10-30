@@ -106,6 +106,8 @@ def catalog():
     for index, pair in enumerate(_PAIRS, 1):
         words = []
         for number, (answer, protocol, key) in enumerate(pair, 1):
+            if number == 1:
+                protocol, key = 'a1z26', 0
             words.append({"id": "one" if number == 1 else "two", "answer": answer,
                           "protocol": protocol, "key": key,
                           "techniques": technique_groups(index - 1)[number - 1],
@@ -132,6 +134,8 @@ def get_challenge(team_id, *, practice_session=False):
                 if not _valid_answer(word.get("answer")) or word.get("protocol") not in PROTOCOLS:
                     raise ValueError("Invalid private cipher entry")
                 word["id"] = "one" if index == 0 else "two"
+                if index == 0:
+                    word["protocol"], word["key"] = "a1z26", 0
                 word["key"] = int(word.get("key", 0))
                 if word["protocol"] == "caesar" and not 1 <= word["key"] <= 25:
                     raise ValueError("Caesar keys must be from 1 through 25")

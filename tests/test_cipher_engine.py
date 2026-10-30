@@ -24,6 +24,7 @@ class CipherTests(unittest.TestCase):
         self.assertEqual(len(puzzles), 12)
         self.assertEqual(len({p["id"] for p in puzzles}), 12)
         for puzzle in puzzles:
+            self.assertEqual(puzzle["words"][0]["protocol"], "a1z26")
             for word in puzzle["words"]:
                 self.assertEqual(transform(word["ciphertext"], word["protocol"], word["key"], decode=True), word["answer"])
                 self.assertIn("Example:", clue_for(word, 3))
@@ -32,18 +33,18 @@ class CipherTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "catalog.json"
             for answer, should_fail in (("POSITIONS", True), ("ORBITAL", False)):
-                path.write_text(json.dumps([{"id": "private", "words": [{"answer": answer, "protocol": "caesar", "key": 4}, {"answer": "CAPSULE", "protocol": "atbash"}]}]), encoding="utf-8")
+                path.write_text(json.dumps([{"id": "private", "words": [{"answer": "CAPSULE", "protocol": "caesar", "key": 4}, {"answer": answer, "protocol": "caesar", "key": 4}]}]), encoding="utf-8")
                 with patch.dict("os.environ", {"CIPHER_CATALOG_PATH": str(path)}):
                     if should_fail:
                         with self.assertRaises(ValueError):
                             get_challenge("team")
                     else:
-                        self.assertEqual(get_challenge("team")["words"][0]["answer"], answer)
+                        self.assertEqual(get_challenge("team")["words"][1]["answer"], answer)
 
     def test_private_catalog_accepts_masked_json_environment(self):
         data = [{"id":"private","words":[{"answer":"ORBITAL","protocol":"caesar","key":4},{"answer":"CAPSULE","protocol":"atbash"}]}]
         with patch.dict("os.environ", {"CIPHER_CATALOG_PATH":"", "CIPHER_CATALOG_JSON":json.dumps(data)}):
-            self.assertEqual(get_challenge("team")["words"][0]["answer"], "ORBITAL")
+            self.assertEqual(get_challenge("team")["words"][0]["protocol"], "a1z26")
         with patch.dict("os.environ", {"CIPHER_CATALOG_PATH":"/unused", "CIPHER_CATALOG_JSON":json.dumps(data)}):
             with self.assertRaises(ValueError):
                 get_challenge("team")
@@ -187,6 +188,7 @@ class CipherTests(unittest.TestCase):
     def test_ciphertext_substrings_do_not_infer_a_target(self):
         game = TimeglitchSession("t", "Team")
         game.challenge = catalog()[7]
+        game.challenge["words"][0]["ciphertext"] = "ABIN"
         self.assertIsNone(game._prompt_target("explain how this cabinet works"))
         self.assertEqual(game._prompt_target("explain the protocol for abin"), "word1")
 
