@@ -10,7 +10,7 @@ The audit added checks for durable prompts after unexpected errors and interrupt
 
 GitHub Actions also exposed a simultaneous SQLite journal-initialization race. Initialization now retries only SQLite BUSY and LOCKED errors within a five-second budget. Read-only, corrupt and unclassified errors still fail immediately. Parallel startup checks passed four fresh-database trials with four simultaneous processes on both Windows and Linux.
 
-Coverage includes isolated Test, Morning and Afternoon registration and clocks, Test-only public rehearsal ciphers, immutable team access, legacy-schema migration, objective marks out of 6, pending quality, audited post-event grading, atomic CSV/XLSX grade imports, and full workbook exports. Exports preserve long text in continuation columns and prevent text from becoming executable spreadsheet formulas.
+Coverage includes isolated Pre-test, Test, Morning and Afternoon registration and clocks, public rehearsal ciphers in both practice sessions, immutable team access, legacy-schema migration, objective marks out of 6, pending quality, audited post-event grading, atomic CSV/XLSX grade imports, and full workbook exports. Exports preserve long text in continuation columns and prevent text from becoming executable spreadsheet formulas.
 
 All 12 cipher combinations round-trip. Each of the 72 eligible word/technique paths releases the entire hint after one meaningful prompt. Bare keywords and requests for plaintext do not unlock hints. Provider tests cover Groq priority, optional Ollama backup, output checks, quota admission across processes, and explicit failures without accepted turns or clue progression.
 

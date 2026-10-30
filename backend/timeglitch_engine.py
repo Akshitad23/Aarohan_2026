@@ -47,7 +47,7 @@ class TimeglitchSession:
         self.session_id = str(uuid.uuid4())
         self.team_id, self.team_name = team_id, team_name
         self.start_time = datetime.now()
-        self.challenge = get_challenge(team_id, test_session=batch_id == 'test')
+        self.challenge = get_challenge(team_id, practice_session=batch_id in ('pretest', 'test'))
         self.round1_started, self.round1_completed, self.round1_timed_out = True, False, False
         self.round1_status = "running"
         self.round1_remaining_seconds, self.round1_elapsed_seconds = float(ROUND1_SECONDS), 0.0

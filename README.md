@@ -2,18 +2,19 @@
 
 For the complete setup, rehearsal, session, outage and grading procedures, use the [final event runbook](docs/FINAL_EVENT_RUNBOOK.md).
 
-The application combines team registration, a two-part cryptography challenge, and an organiser dashboard. Flask serves the website and API from one origin. Test, Morning, and Afternoon have separate registrations, clocks, transcripts, attempts, and results. Test uses public rehearsal ciphers; it never receives the private competition catalog. Hosted deployments use Neon Postgres; local development can use SQLite.
+The application combines team registration, a two-part cryptography challenge, and an organiser dashboard. Flask serves the website and API from one origin. Pre-test, Test, Morning, and Afternoon have separate registrations, clocks, transcripts, attempts, and results. Both practice sessions use public rehearsal ciphers; they never receive the private competition catalog. Hosted deployments use Neon Postgres; local development can use SQLite.
 
 ## Event flow
 
-1. Before the event, the organizer can select Test in `/admin` for a venue rehearsal. Test registrations and results are isolated from competition sessions and use the public rehearsal cipher catalog.
-2. End Test, select Morning, and choose **Open registration for this session**. Morning teams then register and wait until the organizer starts that session.
-3. Teams register at `/` and enter the waiting room. To move to another computer, generate a 5-character transfer code. It expires after 10 minutes and can be used once; using it moves the team's access to that computer.
-4. The organizer starts the selected competition session for all its teams together.
-5. Round 1: Part A lasts five minutes and permits three complete timeline submissions. A correct order earns 2 marks and opens Round 1: Part B immediately. Three unsuccessful submissions or expiry also open Round 1: Part B, with 0 timeline marks.
-6. Each team has fifteen minutes in Round 1: Part B by default. Students prompt CHRONOS for two independent cipher hints, decode the words themselves, and submit each answer separately. Each correct word earns 2 marks.
-7. The live dashboard shows objective marks out of 6. Prompt quality and the final score remain pending until organizers grade the transcript after the session ends.
-8. End Morning before opening Afternoon registration. A team's browser access stays with its original session. Students joining Afternoon need a new registration. Transfer codes move access between computers, expire after 10 minutes, and work once.
+1. Select Pre-test in `/admin` to rehearse now with any available computers. It uses public ciphers and has separate practice registrations and results.
+2. End Pre-test, then select Test for the venue rehearsal with the admin laptop and two participant computers. End Test when the venue check is complete.
+3. Select Morning and choose **Open registration for this session**. Morning teams then register and wait until the organizer starts that session.
+4. Teams register at `/` and enter the waiting room. To move to another computer, generate a 5-character transfer code. It expires after 10 minutes and can be used once; using it moves the team's access to that computer.
+5. The organizer starts the selected competition session for all its teams together.
+6. Round 1: Part A lasts five minutes and permits three complete timeline submissions. A correct order earns 2 marks and opens Round 1: Part B immediately. Three unsuccessful submissions or expiry also open Round 1: Part B, with 0 timeline marks.
+7. Each team has fifteen minutes in Round 1: Part B by default. Students prompt CHRONOS for two independent cipher hints, decode the words themselves, and submit each answer separately. Each correct word earns 2 marks.
+8. The live dashboard shows objective marks out of 6. Prompt quality and the final score remain pending until organizers grade the transcript after the session ends.
+9. End Morning before opening Afternoon registration. A team's browser access stays with its original session. Students joining Afternoon need a new registration. Transfer codes move access between computers, expire after 10 minutes, and work once.
 
 The server controls deadlines, attempts, hint release, and scoring. Refreshing the page does not reset progress or pause time. The dashboard polls every three seconds. Game polling requests only new transcript entries and pauses while the tab is hidden; server clocks continue running.
 

@@ -35,7 +35,7 @@ def event_state(conn, batch_id=None):
             'started_at': row['started_at'], 'ended_at': row['ended_at']}
 
 def list_batches(conn):
-    return [event_state(conn, row['batch_id']) for row in conn.execute("SELECT batch_id FROM event_sessions ORDER BY CASE batch_id WHEN 'test' THEN 0 WHEN 'morning' THEN 1 WHEN 'afternoon' THEN 2 ELSE 3 END,batch_id")]
+    return [event_state(conn, row['batch_id']) for row in conn.execute("SELECT batch_id FROM event_sessions ORDER BY CASE batch_id WHEN 'pretest' THEN 0 WHEN 'test' THEN 1 WHEN 'morning' THEN 2 WHEN 'afternoon' THEN 3 ELSE 4 END,batch_id")]
 
 def team_dict(row, private=False):
     result = {'team_id': row['team_id'], 'team_name': row['team_name'], 'school_name': row['school_name'],

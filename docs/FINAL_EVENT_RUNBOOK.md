@@ -12,7 +12,7 @@ Ollama and `gemma3:4b` are installed on the organizer laptop only. That laptop r
 
 ## 2. Rehearse admin and participant flows safely
 
-Use a local SQLite rehearsal database. It is separate from the clean Neon competition database. Do not register fake teams on the public Render site before the event; those teams would appear in the live roster and exports.
+Use a local SQLite rehearsal database for development tests. It is separate from the Neon event database. For hosted multi-computer checks, use the dedicated Pre-test session. Never add fake teams to Morning or Afternoon; they would appear in competition rosters and exports.
 
 From PowerShell at the project root, prepare the local rehearsal config once:
 
@@ -55,9 +55,20 @@ The configured local AI uses Ollama when Groq is blank. To test the Groq path lo
 
 ## 3. Before each event session
 
-### Test with the venue computers before Morning
+### Pre-test now with any computers
 
-Use the Render site or the prepared laptop-hosted app, but keep everyone on one URL throughout the test. Test is a persistent, separate session. It uses the public rehearsal ciphers, not the private competition catalog.
+Use Pre-test for an early end-to-end trial from home, campus or another location. Use the hosted site or the prepared laptop app and keep all devices on the same URL. Pre-test has its own registrations and results and uses public practice ciphers, never the private competition catalog.
+
+1. Sign in on the admin computer, select **Pre-test**, and click **Open registration for this session**.
+2. On as many participant computers as you want, open the team page and register clearly fake practice teams. Do not enter real participant details.
+3. Confirm all practice teams appear in the Pre-test roster. Click **Start Pre-test for all teams** once. Confirm each computer enters Round 1: Part A.
+4. Check the timeline, chatbot replies, both cipher hints, answer submissions, and transfer-code flow. If testing transfer, generate a code on one participant computer and redeem it on another.
+5. When finished, select **Pre-test** and click **End Pre-test**. It is closed permanently; its records stay under Pre-test and do not affect Test or competition scores.
+6. Leave Morning unopened. Before the event, use the separate Test session for the venue computers.
+
+### Test at the venue before Morning
+
+Use the Render site or the prepared laptop-hosted app, but keep everyone on one URL throughout the venue check. Test is a separate session from Pre-test and uses the public rehearsal ciphers, not the private competition catalog.
 
 1. On the admin laptop, sign in and select **Test** in the session dropdown. Click **Open registration for this session**.
 2. On the two venue computers, open the team page and register two clearly fake teams, such as `VENUE TEST A` and `VENUE TEST B`. Do not use real student details.
@@ -68,7 +79,7 @@ Use the Render site or the prepared laptop-hosted app, but keep everyone on one 
 7. Participant browsers that registered a Test team keep that private Test code in local storage. In the same browser, register the real Morning team using its own details; the site will warn that this replaces the saved Test access. Or open a clean InPrivate profile. Do not resume a Test code as a Morning team.
 8. Confirm the Morning roster contains only competition teams. Start Morning once all teams are ready.
 
-If the test fails, do not start Morning. Check the admin error, public health page, Wi-Fi and laptop fallback first. If the Test session was already ended, fix the issue and rehearse on the isolated local SQLite setup in section 2; do not try to reopen Test on the competition database.
+If the venue test fails, do not start Morning. Check the admin error, public health page, Wi-Fi and laptop fallback first. If Test has already ended, fix the issue and rehearse on the isolated local SQLite setup in section 2; do not try to reopen Test on the competition database.
 
 ### Checks before Morning and Afternoon
 
@@ -76,7 +87,7 @@ Do these checks before Morning, then repeat the service and roster checks before
 
 1. In Render, confirm the service is live. Open `https://ai-think-hack-create.onrender.com/api/health` and verify `status: ok` and `storage: postgres`. If the page is waking from sleep, allow about a minute.
 2. Sign in at `https://ai-think-hack-create.onrender.com/admin-login`. Confirm the correct session is selected and check provider configuration and remaining budget.
-3. Do not register a test team in the production event. Hosted health verifies the app and database, not a live Groq response. The hosted Groq response still needs an isolated live rehearsal before the event if you want that specific check; do not dirty the competition roster to perform it.
+3. Use Pre-test for a hosted end-to-end check, including an actual Groq response. Test and Pre-test rosters are separate from competition teams. Do not create fake teams in Morning or Afternoon.
 4. Confirm the private competition catalog is active. It is stored in Render's masked `CIPHER_CATALOG_JSON` setting and the local private file. Never show the catalog to students or put it in Git.
 5. Confirm the organizer laptop has power, `backend/.env.event`, the private catalog, Ollama and `gemma3:4b`. The laptop fallback preflight should pass. Test `start_event_fallback.bat` from a second device on the same Wi-Fi before participants arrive, then close the rehearsal server.
 6. Check the actual Groq organization limits in its console. Groq limits apply at the organization level. Its policy prohibits registering multiple accounts or orchestrating organizations to get around limits. Do not rotate through accounts to bypass 429s. The app is paced for the configured budget and the laptop has local Ollama backup. See [Groq's rate limits](https://console.groq.com/docs/rate-limits) and [acceptable-use policy](https://console.groq.com/docs/legal/ai-policy).

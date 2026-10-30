@@ -23,7 +23,7 @@ _pool_lock = threading.Lock()
 SCHEMA_LOCK = 26002601
 # Bump this when a schema migration is added. Worker restarts must not run DDL
 # against tables that other ready workers are reading.
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 DATABASE_ERRORS = (sqlite3.OperationalError,)
 if psycopg is not None:
     DATABASE_ERRORS += (psycopg.OperationalError, PoolClosed, PoolTimeout, TooManyRequests)
@@ -214,6 +214,7 @@ def init_db():
             f'CREATE TABLE IF NOT EXISTS event_sessions(batch_id TEXT PRIMARY KEY,name TEXT NOT NULL,started_at {real},ended_at {real})',
             "INSERT INTO event_sessions(batch_id,name,started_at,ended_at) SELECT 'morning','Morning',started_at,ended_at FROM event WHERE id=1 ON CONFLICT(batch_id) DO NOTHING",
             "INSERT INTO event_sessions(batch_id,name) VALUES('afternoon','Afternoon') ON CONFLICT(batch_id) DO NOTHING",
+            "INSERT INTO event_sessions(batch_id,name) VALUES('pretest','Pre-test') ON CONFLICT(batch_id) DO NOTHING",
             "INSERT INTO event_sessions(batch_id,name) VALUES('test','Test') ON CONFLICT(batch_id) DO NOTHING",
             f'''CREATE TABLE IF NOT EXISTS teams(team_id TEXT PRIMARY KEY,team_name TEXT NOT NULL,
                 school_name TEXT NOT NULL,participants TEXT NOT NULL,registered_at {real} NOT NULL,

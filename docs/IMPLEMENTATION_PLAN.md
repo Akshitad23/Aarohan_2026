@@ -1,6 +1,6 @@
 # Event implementation plan
 
-The target is 30 to 40 teams using one shared website. Test, Morning and Afternoon have separate registrations, clocks, logs, and results. Test is a pre-event venue rehearsal with public puzzles; it is not included in competition results. Each competition team registers for the active session, waits for its organizer start, and completes both parts. The live score covers objective marks out of 6; prompt quality and the final total out of 10 remain pending until post-event grading. The same server supplies the admin dashboard.
+The target is 30 to 40 teams using one shared website. Pre-test, Test, Morning and Afternoon have separate registrations, clocks, logs, and results. Pre-test supports early checks on any computers; Test is the venue rehearsal. Both use public puzzles and are excluded from competition results. Each competition team registers for the active session, waits for its organizer start, and completes both parts. The live score covers objective marks out of 6; prompt quality and the final total out of 10 remain pending until post-event grading. The same server supplies the admin dashboard.
 
 ## Findings in the original repository
 

@@ -1,6 +1,6 @@
 # Post-event prompt grading
 
-Competition teams can earn 10 marks in each session. Morning and Afternoon keep separate registrations, clocks, logs and results. Test is a venue rehearsal with public practice ciphers; its scores and exports are not competition results.
+Competition teams can earn 10 marks in each session. Morning and Afternoon keep separate registrations, clocks, logs and results. Pre-test and Test are practice sessions with public ciphers; their scores and exports are not competition results.
 
 | Component | Maximum | Award rule |
 | --- | ---: | --- |
@@ -28,7 +28,7 @@ Before the event, have two organizers grade the same practice transcripts and se
 
 ## Export one event session
 
-Select the competition session, Morning or Afternoon, in the admin dashboard, then download its Excel workbook. Do not combine or rank the Test session with competition scores. The export includes:
+Select the competition session, Morning or Afternoon, in the admin dashboard, then download its Excel workbook. Do not combine or rank Pre-test or Test results with competition scores. The export includes:
 
 | Worksheet | Contents |
 | --- | --- |

@@ -1,6 +1,6 @@
 # Remaining event preparation
 
-Round 1: Part A is five minutes with at most three attempts. A correct order earns 2 marks and opens Round 1: Part B immediately. Three unsuccessful attempts or expiry also opens Round 1: Part B. Each team then has fifteen minutes. Test, Morning and Afternoon keep independent registrations, starts, results and exports. Test uses public rehearsal ciphers and is not a competition session.
+Round 1: Part A is five minutes with at most three attempts. A correct order earns 2 marks and opens Round 1: Part B immediately. Three unsuccessful attempts or expiry also opens Round 1: Part B. Each team then has fifteen minutes. Pre-test, Test, Morning and Afternoon keep independent registrations, starts, results and exports. Pre-test and Test use public rehearsal ciphers and are not competition sessions.
 
 The application records objective marks out of 6. Prompt quality remains pending until post-event review supplies up to 4 marks. Excel exports and validated grade imports are implemented. An automatic AI judging notebook is not implemented; the later scoring pass still needs the exported transcripts and organizer review.
 
@@ -9,12 +9,12 @@ The application records objective marks out of 6. Prompt quality remains pending
 | Work | Current state | Completion check |
 | --- | --- | --- |
 | Shared hosting | Render Free service is live at [ai-think-hack-create.onrender.com](https://ai-think-hack-create.onrender.com) | Open the service from the intended devices and rehearse its behavior |
-| Persistent database | Neon Free is connected; hosted health reports Postgres | Use Test for the venue rehearsal, then verify Morning can open with no Test teams in its roster |
+| Persistent database | Neon Free is connected; hosted health reports Postgres | Use Pre-test for early multi-computer checks, then Test at the venue; verify Morning opens with neither practice roster |
 | API capacity | A real Groq request succeeded; 40-team live AI throughput is unverified | Rehearse sustained prompt traffic within the account's actual quota |
 | Ollama backup | `gemma3:4b` returned a real reply through the app after a simulated Groq authentication failure | Confirm the local model is warm on event day; Render still has no remote Ollama gateway |
 | Competition puzzles | Twelve private pairs are configured in Render as masked `CIPHER_CATALOG_JSON` | Confirm a new rehearsal team receives the intended catalog after deployment |
 | Theme | All four pages use the reference theme; controller and static checks pass | Inspect laptop and narrow layouts, keyboard navigation, readable clocks and long messages in a real browser |
-| Session rehearsal | Automated checks cover independent Test, Morning and Afternoon records | At the venue, test with the admin laptop and two computers in Test, then activate Morning |
+| Session rehearsal | Automated checks cover independent practice and competition sessions | Try Pre-test now with multiple computers, then use the admin laptop and two computers in Test at the venue before activating Morning |
 | Laptop fallback | Launcher, private configuration and read-only Neon preflight are ready; local health reports Postgres | Test from a second laptop on venue Wi-Fi and verify firewall access before event day |
 | Venue readiness | Not tested | Test the intended laptops and Wi-Fi, organizer login, both exports and provider failure behavior |
 | Result retention | Excel export and local SQLite backup tools exist | Keep each session's private workbook and a database backup in organizer-controlled storage |
