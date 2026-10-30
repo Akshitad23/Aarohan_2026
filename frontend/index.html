@@ -53,12 +53,17 @@
             Move to another laptop
           </summary>
           <p>
-            Keep this private resume code. Anyone with it can access your team's game.
+            Create a 5-character code when you need to move to another computer. It expires after 10 minutes and works once. Using it moves your team access to the new computer.
           </p>
-          <input id="resumeCode" class="resume-code" readonly aria-label="Private team resume code">
-          <button type="button" id="copyCode" class="secondary">
-            Copy resume code
+          <button type="button" id="generateResumeCode" class="secondary">
+            Generate transfer code
           </button>
+          <p id="resumeCodeStatus" class="message" role="status"></p>
+          <div id="resumeCodeArea" hidden>
+            <label for="resumeCode">5-character transfer code</label>
+            <input id="resumeCode" class="resume-code" readonly aria-label="5-character team transfer code">
+            <button type="button" id="copyCode" class="secondary">Copy transfer code</button>
+          </div>
         </details>
       </div>
       <section class="panel">
@@ -110,13 +115,13 @@
       </section>
       <details class="panel">
         <summary>
-          Resume with a private code
+          Resume with a transfer code
         </summary>
         <form id="resumeForm">
           <label for="privateCode">
-            Team resume code
+            5-character transfer code
           </label>
-          <input id="privateCode" class="resume-code" required autocomplete="off" spellcheck="false">
+          <input id="privateCode" class="resume-code" required maxlength="5" minlength="5" pattern="[A-HJ-NP-Z2-9]{5}" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" aria-describedby="resumeError">
           <p id="resumeError" class="message error" role="status"></p>
           <div class="actions">
             <button type="submit">

@@ -23,7 +23,7 @@ _pool_lock = threading.Lock()
 SCHEMA_LOCK = 26002601
 # Bump this when a schema migration is added. Worker restarts must not run DDL
 # against tables that other ready workers are reading.
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 DATABASE_ERRORS = (sqlite3.OperationalError,)
 if psycopg is not None:
     DATABASE_ERRORS += (psycopg.OperationalError, PoolClosed, PoolTimeout, TooManyRequests)
@@ -225,6 +225,8 @@ def init_db():
                 score {real} NOT NULL,reason TEXT NOT NULL,reviewed_at {real} NOT NULL)''',
             f'CREATE TABLE IF NOT EXISTS admin_sessions(token_hash TEXT PRIMARY KEY,expires_at {real} NOT NULL)',
             f'CREATE TABLE IF NOT EXISTS login_limits(address TEXT PRIMARY KEY,count INTEGER NOT NULL,window_start {real} NOT NULL)',
+            f'CREATE TABLE IF NOT EXISTS team_resume_codes(code_hash TEXT PRIMARY KEY,team_id TEXT NOT NULL REFERENCES teams(team_id),created_at {real} NOT NULL,expires_at {real} NOT NULL)',
+            f'CREATE TABLE IF NOT EXISTS resume_code_limits(address TEXT PRIMARY KEY,count INTEGER NOT NULL,window_start {real} NOT NULL)',
             f'CREATE TABLE IF NOT EXISTS provider_budget_state(scope TEXT PRIMARY KEY,cooldown_until {real} NOT NULL DEFAULT 0)',
             f'''CREATE TABLE IF NOT EXISTS provider_reservations(id TEXT PRIMARY KEY,scope TEXT NOT NULL,started_at {real} NOT NULL,
                 tokens INTEGER NOT NULL,team_id TEXT NOT NULL,active_until {real} NOT NULL DEFAULT 0)''',

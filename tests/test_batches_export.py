@@ -90,14 +90,15 @@ class BatchTests(unittest.TestCase):
         self.assertNotEqual([word['answer'] for word in rehearsal_words],['PRIVATE','ANSWERS'])
         self.assertEqual([word['answer'] for word in competition_words],['PRIVATE','ANSWERS'])
 
-    def test_schema_v3_upgrade_adds_test_session_without_resetting_active_session(self):
+    def test_schema_v3_upgrade_adds_test_session_and_resume_codes_without_resetting_active_session(self):
         with logger_db.connect() as conn:
             conn.execute("DELETE FROM event_sessions WHERE batch_id='test'")
             conn.execute('UPDATE schema_meta SET version=3 WHERE id=1')
         logger_db.init_db()
         with logger_db.connect() as conn:
-            self.assertEqual(conn.execute('SELECT version FROM schema_meta WHERE id=1').fetchone()['version'],4)
+            self.assertEqual(conn.execute('SELECT version FROM schema_meta WHERE id=1').fetchone()['version'],logger_db.SCHEMA_VERSION)
             self.assertEqual(conn.execute("SELECT name FROM event_sessions WHERE batch_id='test'").fetchone()['name'],'Test')
+            self.assertIsNotNone(conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='team_resume_codes'").fetchone())
             self.assertEqual(conn.execute('SELECT active_batch_id FROM event WHERE id=1').fetchone()['active_batch_id'],'morning')
 
     def test_postevent_review_batch_validation_and_atomic_import(self):

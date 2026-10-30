@@ -47,7 +47,7 @@ Use a separate browser profile or device and open `http://localhost:5000/`. Regi
 1. Try the event timeline. It allows five minutes and up to three submissions. A correct order earns 2 marks and opens Part B immediately; three unsuccessful submissions also open Part B, with no timeline marks.
 2. In Part B, send a meaningful prompt about one target word using one technique from [AI behavior and example prompts](AI_RECOMMENDATIONS.md). The assigned eligible techniques vary, so try another technique if the first prompt does not release that word's hint.
 3. Confirm the released pack contains the protocol name, operation, and example. Decode and submit the word. Repeat for the second word. Each correct answer earns 2 marks.
-4. Confirm the participant sees the score and can resume from the same browser profile. The objective score is out of 6; prompt quality remains pending until organizer review adds up to 4.
+4. Confirm the participant sees the score and can resume from the same browser profile. Generate a transfer code, enter it once on another browser or computer, and confirm the team continues there. The code expires after 10 minutes and moves access to the new computer. The objective score is out of 6; prompt quality remains pending until organizer review adds up to 4.
 
 Use **Afternoon** in the local rehearsal only if you also want to verify session separation. It has separate registration, start state, results and export. Never use these rehearsal steps on the public competition batch.
 
@@ -62,7 +62,7 @@ Use the Render site or the prepared laptop-hosted app, but keep everyone on one 
 1. On the admin laptop, sign in and select **Test** in the session dropdown. Click **Open registration for this session**.
 2. On the two venue computers, open the team page and register two clearly fake teams, such as `VENUE TEST A` and `VENUE TEST B`. Do not use real student details.
 3. Confirm both teams appear in the Test roster. Click **Start Test for all teams** once. Confirm both computers leave the waiting room and begin Round 1: Part A.
-4. From the team computers, check the timeline, Part B, chatbot response, answer submission and resume code. Test hints use only the public rehearsal puzzles, so they do not reveal competition answers.
+4. From the team computers, check the timeline, Part B, chatbot response, answer submission and transfer code. Test hints use only the public rehearsal puzzles, so they do not reveal competition answers.
 5. When satisfied, select **Test** in admin and click **End Test**. Test is closed and cannot be reopened. Its teams, prompts, scores and export remain under Test, separate from Morning and Afternoon.
 6. Select **Morning** and click **Open registration for this session**. Confirm admin and the registration page show **Morning / Waiting for teams** before inviting competitors.
 7. Participant browsers that registered a Test team keep that private Test code in local storage. In the same browser, register the real Morning team using its own details; the site will warn that this replaces the saved Test access. Or open a clean InPrivate profile. Do not resume a Test code as a Morning team.
@@ -106,7 +106,7 @@ Use the Windows fallback if the public site remains unavailable for more than tw
 
 1. On the organizer laptop, run `start_event_fallback.bat`. It performs a read-only database check and confirms Neon and the private catalog before serving pages.
 2. Run `ipconfig`. Find the laptop's IPv4 address on the venue Wi-Fi network.
-3. Tell every team and the admin to use the same URLs: `http://<laptop-IPv4>:5000/` for teams and `http://<laptop-IPv4>:5000/admin-login` for the organizer. Students can resume with their team code if the browser origin changed.
+3. Tell every team and the admin to use the same URLs: `http://<laptop-IPv4>:5000/` for teams and `http://<laptop-IPv4>:5000/admin-login` for the organizer. If a team changes computers, generate a 5-character transfer code from its saved team page or ask the organizer to issue one in admin. It expires after 10 minutes and can be used once. Redeeming it moves the team's access to the new computer and signs out the old one.
 4. If Windows Firewall prompts, allow Python on **Private networks only**. Keep the laptop awake and the launcher terminal open.
 5. Keep everyone on the laptop URL for the rest of that session, even if Render returns. Both app instances write to Neon, but everyone should use one URL to avoid confusion.
 

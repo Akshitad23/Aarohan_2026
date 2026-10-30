@@ -189,10 +189,10 @@
   $('closeReview').onclick = () => { reviewVersion++; $('reviewPanel').hidden = true; reviewId = null; };
   $('closeRoster').onclick = () => { rosterVersion++; $('rosterPanel').hidden = true; rosterTeam = null; $('recoveryCode').value = ''; };
   $('recoverTeam').onclick = async () => {
-    if (!rosterTeam || !window.confirm(`Issue a new private resume code for ${rosterTeam.team_name}? Their previous code will stop working.`)) return;
+    if (!rosterTeam || !window.confirm(`Generate a one-time 5-character transfer code for ${rosterTeam.team_name}? It expires after 10 minutes.`)) return;
     const teamId = rosterTeam.team_id, version = rosterVersion;
     $('recoverTeam').disabled = true; $('recoveryError').textContent = '';
-    try { const result = await api.request(`/api/admin/teams/${encodeURIComponent(teamId)}/token`, {method:'POST', admin:true, body:{}}); if (version === rosterVersion && rosterTeam?.team_id === teamId) { $('recoveryCode').value = result.team_token; $('recoveryArea').hidden = false; } }
+    try { const result = await api.request(`/api/admin/teams/${encodeURIComponent(teamId)}/resume-code`, {method:'POST', admin:true, body:{}}); if (version === rosterVersion && rosterTeam?.team_id === teamId) { $('recoveryCode').value = result.resume_code; $('recoveryArea').hidden = false; } }
     catch (error) { checkAuth(error); if (version === rosterVersion && rosterTeam?.team_id === teamId) $('recoveryError').textContent = error.message; }
     finally { $('recoverTeam').disabled = false; }
   };

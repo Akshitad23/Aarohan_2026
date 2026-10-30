@@ -23,7 +23,7 @@ Use this when Render is unavailable or when Groq is failing and you need the loc
 
 1. Check the public health page. If it is still unavailable after two minutes, use the organizer laptop. Connect it to power and keep it awake.
 2. Run `start_event_fallback.bat` and leave the command window open. It performs a read-only Neon connection check and validates the private catalog before launching Waitress.
-3. Run `ipconfig` and find the laptop's IPv4 address for the venue Wi-Fi adapter. Share `http://<IPv4-address>:5000/` with all teams and `http://<IPv4-address>:5000/admin-login` with the organizer. Everyone must use the same address. Teams may need to reopen the site and resume with their team code.
+3. Run `ipconfig` and find the laptop's IPv4 address for the venue Wi-Fi adapter. Share `http://<IPv4-address>:5000/` with all teams and `http://<IPv4-address>:5000/admin-login` with the organizer. Everyone must use the same address. If a team moves to a different computer, it can generate a 5-character transfer code on its saved team page. The code expires after 10 minutes, works once, and moves access to the new computer.
 4. If Windows Firewall asks, allow Python on **Private networks only**. Never expose port 5000 on a public network.
 5. Keep all teams on the laptop URL for that session, even if Render returns. The laptop app and Render both use Neon, but switching repeatedly risks sending participants to different experiences. After the session, export the results as usual.
 

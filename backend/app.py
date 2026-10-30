@@ -98,6 +98,14 @@ def admin_login_page():
 def register_team():
     return jsonify(service.register(body())), 201
 
+@app.post('/api/tg/resume-code')
+def create_team_resume_code():
+    return jsonify(service.create_resume_code(team_token()))
+
+@app.post('/api/tg/resume')
+def resume_team():
+    return jsonify(service.resume_with_code(body().get('resume_code'), request.remote_addr or 'unknown'))
+
 @app.get('/api/event/status')
 def event_status():
     with connect() as conn:
@@ -202,16 +210,10 @@ def admin_teams():
     return jsonify(teams=teams, stats={'total_teams':len(teams),'total_participants':sum(t['team_size'] for t in teams),
                                       'unique_schools':len({t['school_name'].lower() for t in teams})})
 
-@app.post('/api/admin/teams/<team_id>/token')
+@app.post('/api/admin/teams/<team_id>/resume-code')
 @admin_required
 def recover_team(team_id):
-    token = secrets.token_urlsafe(32)
-    with transaction() as conn:
-        row = conn.execute('SELECT * FROM teams WHERE team_id=?', (team_id,)).fetchone()
-        if not row:
-            raise service.EventError('Team not found.', 404)
-        conn.execute('UPDATE teams SET token_hash=? WHERE team_id=?', (service.digest(token), team_id))
-    return jsonify(team=service.team_dict(row), team_token=token)
+    return jsonify(service.create_recovery_code(team_id))
 
 @app.get('/api/admin/log')
 @admin_required

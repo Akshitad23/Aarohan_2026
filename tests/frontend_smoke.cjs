@@ -201,7 +201,7 @@ async function delayedAdminChecks() {
     if (route === '/api/event/status') return {event:batchList[0],batches:batchList};
     if (route === '/api/health') return {ai:{}};
     if (route.startsWith('/api/admin/log')) return {event:route.includes('afternoon') ? batchList[1] : batchList[0],total:2,sessions:teamRows.map(team => ({team_id:team.team_id,session_id:team.team_id,phase:'finished'}))};
-    if (route.endsWith('/token')) return recovery.promise;
+    if (route.endsWith('/resume-code')) return recovery.promise;
     if (route.startsWith('/api/admin/teams')) return {teams:teamRows};
     if (route === '/api/admin/session/A' && useDelayedDetail) return detailA.promise;
     if (route.startsWith('/api/admin/session/')) return {session:{team_id:'B',team_name:'Team B',event:batchList[0],round2:{}},messages:[]};
@@ -213,7 +213,7 @@ async function delayedAdminChecks() {
   action(0,0);
   const recovering = test.get('recoverTeam').onclick(); await settle();
   action(1,0);
-  recovery.resolve({team_token:'TEAM-A-NEW-CODE'}); await recovering;
+  recovery.resolve({resume_code:'ABCDE'}); await recovering;
   assert.match(test.get('rosterTitle').textContent, /Team B/);
   assert.equal(test.get('recoveryCode').value, '', 'A token issued for Team A must not appear under Team B.');
   assert.equal(test.get('recoveryArea').hidden, true);

@@ -191,12 +191,24 @@ class EventTests(unittest.TestCase):
                 result = future.result(timeout=5)
                 self.assertEqual(result['state']['round2']['prompt_count'], 1)
 
-    def test_recovery_and_logout_revoke_old_credentials(self):
+    def test_short_transfer_code_is_one_time_and_rotates_team_access(self):
         registered = self.register()
-        new = self.client.post('/api/admin/teams/' + registered['team']['team_id'] + '/token', headers=self.admin)
-        self.assertEqual(new.status_code, 200)
+        created = self.client.post('/api/tg/resume-code', headers=self.headers(registered), json={})
+        self.assertEqual(created.status_code, 200)
+        code = created.json['resume_code']
+        self.assertEqual(len(code), 5)
+        self.assertEqual(created.json['expires_in'], 600)
+        self.assertRegex(code, r'^[A-HJ-NP-Z2-9]{5}$')
+        resumed = self.client.post('/api/tg/resume', json={'resume_code': code.lower()})
+        self.assertEqual(resumed.status_code, 200)
+        self.assertEqual(resumed.json['team']['team_id'], registered['team']['team_id'])
         self.assertEqual(self.client.get('/api/tg/session/status', headers=self.headers(registered)).status_code, 401)
-        self.assertEqual(self.client.get('/api/tg/session/status', headers={'X-Team-Token':new.json['team_token']}).status_code, 200)
+        self.assertEqual(self.client.get('/api/tg/session/status', headers={'X-Team-Token':resumed.json['team_token']}).status_code, 200)
+        replay = self.client.post('/api/tg/resume', json={'resume_code': code})
+        self.assertEqual(replay.status_code, 401)
+        new = self.client.post('/api/admin/teams/' + registered['team']['team_id'] + '/resume-code', headers=self.admin, json={})
+        self.assertEqual(new.status_code, 200)
+        self.assertEqual(len(new.json['resume_code']), 5)
         self.assertEqual(self.client.post('/api/admin/logout', headers=self.admin).status_code, 200)
         self.assertEqual(self.client.get('/api/admin/log', headers=self.admin).status_code, 401)
 

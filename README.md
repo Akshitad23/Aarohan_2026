@@ -8,12 +8,12 @@ The application combines team registration, a two-part cryptography challenge, a
 
 1. Before the event, the organizer can select Test in `/admin` for a venue rehearsal. Test registrations and results are isolated from competition sessions and use the public rehearsal cipher catalog.
 2. End Test, select Morning, and choose **Open registration for this session**. Morning teams then register and wait until the organizer starts that session.
-3. Teams register at `/`, receive a private resume code, and enter the waiting room. A registration belongs permanently to its session.
+3. Teams register at `/` and enter the waiting room. To move to another computer, generate a 5-character transfer code. It expires after 10 minutes and can be used once; using it moves the team's access to that computer.
 4. The organizer starts the selected competition session for all its teams together.
 5. Round 1: Part A lasts five minutes and permits three complete timeline submissions. A correct order earns 2 marks and opens Round 1: Part B immediately. Three unsuccessful submissions or expiry also open Round 1: Part B, with 0 timeline marks.
 6. Each team has fifteen minutes in Round 1: Part B by default. Students prompt CHRONOS for two independent cipher hints, decode the words themselves, and submit each answer separately. Each correct word earns 2 marks.
 7. The live dashboard shows objective marks out of 6. Prompt quality and the final score remain pending until organizers grade the transcript after the session ends.
-8. End Morning before opening Afternoon registration. A Morning code continues to access Morning results. Students joining Afternoon need a new registration and private code, including when reusing a laptop.
+8. End Morning before opening Afternoon registration. A team's browser access stays with its original session. Students joining Afternoon need a new registration. Transfer codes move access between computers, expire after 10 minutes, and work once.
 
 The server controls deadlines, attempts, hint release, and scoring. Refreshing the page does not reset progress or pause time. The dashboard polls every three seconds. Game polling requests only new transcript entries and pauses while the tab is hidden; server clocks continue running.
 

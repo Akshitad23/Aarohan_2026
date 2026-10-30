@@ -8,6 +8,11 @@ from datetime import datetime, timezone
 from logger_db import connect, transaction
 from timeglitch_engine import ROUND1_SECONDS, ROUND2_SECONDS, TimeglitchSession
 
+RESUME_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+RESUME_CODE_TTL = 10 * 60
+RESUME_CODE_WINDOW = 5 * 60
+RESUME_CODE_INVALID_LIMIT = 200
+
 class EventError(Exception):
     def __init__(self, message, status=400, details=None):
         super().__init__(message)
@@ -82,6 +87,60 @@ def authorized_team(conn, token):
     if not row:
         raise EventError('Your team token is missing or invalid. Ask an organizer to recover access.', 401)
     return row
+
+def create_resume_code_for_team(conn, team_id):
+    team = conn.execute('SELECT * FROM teams WHERE team_id=?', (team_id,)).fetchone()
+    if not team:
+        raise EventError('Team not found.', 404)
+    now = time.time()
+    conn.execute('DELETE FROM team_resume_codes WHERE team_id=? OR expires_at<=?', (team_id, now))
+    for _ in range(8):
+        code = ''.join(secrets.choice(RESUME_CODE_ALPHABET) for _ in range(5))
+        cursor = conn.execute('INSERT INTO team_resume_codes(code_hash,team_id,created_at,expires_at) VALUES(?,?,?,?) ON CONFLICT(code_hash) DO NOTHING',
+            (digest(code), team_id, now, now + RESUME_CODE_TTL))
+        if cursor.rowcount:
+            return code
+    raise EventError('Could not create a transfer code. Try again.', 503)
+
+def create_resume_code(token):
+    with transaction() as conn:
+        team = authorized_team(conn, token)
+        return {'resume_code': create_resume_code_for_team(conn, team['team_id']), 'expires_in': RESUME_CODE_TTL}
+
+def create_recovery_code(team_id):
+    with transaction() as conn:
+        team = conn.execute('SELECT * FROM teams WHERE team_id=?', (team_id,)).fetchone()
+        if not team:
+            raise EventError('Team not found.', 404)
+        return {'team': team_dict(team), 'resume_code': create_resume_code_for_team(conn, team_id), 'expires_in': RESUME_CODE_TTL}
+
+def resume_with_code(raw_code, address='unknown'):
+    code = ''.join(str(raw_code or '').upper().split()).replace('-', '')
+    failure = None
+    with transaction() as conn:
+        now = time.time()
+        if len(code) != 5 or any(char not in RESUME_CODE_ALPHABET for char in code):
+            code = ''
+        match = conn.execute('''SELECT teams.* FROM team_resume_codes codes
+            JOIN teams ON teams.team_id=codes.team_id
+            WHERE codes.code_hash=? AND codes.expires_at>?''', (digest(code), now)).fetchone() if code else None
+        if not match:
+            row = conn.execute('SELECT count,window_start FROM resume_code_limits WHERE address=?', (address,)).fetchone()
+            if row and now - row['window_start'] < RESUME_CODE_WINDOW and row['count'] >= RESUME_CODE_INVALID_LIMIT:
+                failure = EventError('Too many incorrect codes. Wait a few minutes and try again.', 429)
+            else:
+                count = row['count'] + 1 if row and now - row['window_start'] < RESUME_CODE_WINDOW else 1
+                window_start = row['window_start'] if row and now - row['window_start'] < RESUME_CODE_WINDOW else now
+                conn.execute('''INSERT INTO resume_code_limits(address,count,window_start) VALUES(?,?,?)
+                    ON CONFLICT(address) DO UPDATE SET count=excluded.count,window_start=excluded.window_start''',
+                    (address, count, window_start))
+                failure = EventError('That transfer code is invalid or expired.', 401)
+        else:
+            conn.execute('DELETE FROM team_resume_codes WHERE code_hash=?', (digest(code),))
+            token = secrets.token_urlsafe(32)
+            conn.execute('UPDATE teams SET token_hash=? WHERE team_id=?', (digest(token), match['team_id']))
+            return {'team': team_dict(match, True), 'team_token': token}
+    raise failure
 
 def load(conn, team, history_after=None, include_history=True):
     if conn.postgres and (history_after is not None or not include_history):
