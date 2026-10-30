@@ -105,11 +105,11 @@ class TimeglitchSession:
             self.round1_score = 2
             self.start_round2()
             self._update_score()
-            return True, matches, "Timeline correct. Awarded 2/2 marks. Round 1: Part B is ready."
+            return True, matches, "Timeline correct. Round 1: Part B is ready."
         if self.round1_attempts >= MAX_TIMELINE_ATTEMPTS:
             self.round1_status = "attempts_exhausted"
             self.start_round2()
-            return False, matches, "Three attempts used. Round 1: Part A scored 0/2. Continue to Round 1: Part B."
+            return False, matches, "Three attempts used. Continue to Round 1: Part B."
         return False, matches, f"Some events are out of order. {3 - self.round1_attempts} attempt(s) remain."
 
     def handle_round1_timeout(self):
@@ -193,7 +193,7 @@ class TimeglitchSession:
         if not prompt or len(prompt) > 2000:
             return {"error": "Use a prompt between 1 and 2000 characters."}
         low = prompt.lower()
-        key = self._target_key(target) or self._prompt_target(low)
+        key = None
         detected = self.detect_techniques(low)
         meaningful = (len(prompt.split()) >= 8
                       and re.search(r"\b(explain|describe|identify|teach|give|show|help|hint|tell|name|compare|check|demonstrate|reveal)\b", low)
@@ -201,16 +201,26 @@ class TimeglitchSession:
                       and not self._asks_for_plaintext(low))
         technique = None
         reply = ""
-        if key:
-            word = self.challenge["words"][int(key[-1]) - 1]
-            technique = next((item for item in detected if item in word["techniques"]), None) if meaningful else None
-            if technique or self.clue_progress[key] == 3:
-                reply = self._clue(word, 3)
-        stage_changed = bool(key and technique and self.clue_progress[key] < 3)
+        unlocked = []
+        matches = {}
+        for index, word in enumerate(self.challenge["words"], 1):
+            word_key = f"word{index}"
+            matched = next((item for item in detected if item in word["techniques"]), None) if meaningful else None
+            if matched:
+                matches[word_key] = matched
+                if self.clue_progress[word_key] < 3:
+                    unlocked.append(word_key)
+        key = next(iter(matches), None)
+        technique = matches.get(key)
+        reply = "\n\n".join(
+            f"Word {index}: " + self._clue(word, 3)
+            for index, word in enumerate(self.challenge["words"], 1)
+            if f"word{index}" in unlocked)
+        stage_changed = bool(unlocked)
         released_clues = []
         locked_protocols = []
         for index, word in enumerate(self.challenge["words"], 1):
-            stage = 3 if stage_changed and key == f"word{index}" else self.clue_progress[f"word{index}"]
+            stage = 3 if f"word{index}" in unlocked else self.clue_progress[f"word{index}"]
             if stage:
                 released_clues.append(f"Word {index}: " + self._clue(word, stage))
             else:
@@ -232,14 +242,14 @@ class TimeglitchSession:
         # Provider acceptance is the commit point for a prompt. Failed calls
         # cannot consume an attempt or release even a server-planned hint.
         self.round2_prompt_count += 1
-        if stage_changed:
-            self.clue_progress[key] = 3
-            self.stage_turn[key] = self.round2_prompt_count
+        for word_key in unlocked:
+            self.clue_progress[word_key] = 3
+            self.stage_turn[word_key] = self.round2_prompt_count
         evaluation = evaluate_prompt(prompt, self.prompt_history)
         self.last_evaluation = evaluation.to_dict()
         self.best_prompt_quality_score = 0
         self.prompt_history.append({"turn": self.round2_prompt_count, "prompt": prompt, "response": reply,
-                                    "evaluation": self.last_evaluation, "target": key,
+                                    "evaluation": self.last_evaluation, "target": key, "unlocked_words": unlocked,
                                     "ai_mode": "live", "ai_provider": ai_metadata.get("ai_provider", "groq"),
                                     "detected_technique": technique, "detected_techniques": detected,
                                     "clue_unlocked": stage_changed, "chronos_api_fallback": False,
@@ -275,7 +285,7 @@ class TimeglitchSession:
             self.round2_completed = self.round2_decoded = self.is_finished = True
             self.round2_status = "completed"
             self.round2_finish_time = datetime.now()
-        return {"correct": correct, "message": "Word decoded. Awarded 2 marks." if correct else "That word is incorrect. Check your decoding steps.",
+        return {"correct": correct, "message": "Word decoded correctly." if correct else "That word is incorrect. Check your decoding steps.",
                 "word_scores": dict(self.word_scores), "word_solved": dict(self.word_solved),
                 "round2_score": self.round2_score, "total_score": self.total_score}
 

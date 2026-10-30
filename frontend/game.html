@@ -69,14 +69,7 @@
               Timeline attempts
             </span>
           </div>
-          <div class="score">
-            <strong>
-              10
-            </strong>
-            <span>
-              Total marks
-            </span>
-          </div>
+
         </div>
         <p class="muted">
           Order the space events first, then prompt CHRONOS for cipher hints and decode two words. Every team continues to Round 1: Part B.
@@ -98,7 +91,7 @@
         </div>
         <div class="panel">
           <p>
-            Arrange the events from earliest to latest. You have five minutes and up to three attempts. A correct order earns 2 marks and opens Round 1: Part B immediately.
+            Arrange the events from earliest to latest. You have five minutes and up to three attempts. A correct order opens Round 1: Part B immediately.
           </p>
           <div class="row between">
             <span id="attempts" class="badge">
@@ -117,7 +110,7 @@
             </button>
           </div>
           <p class="muted">
-            After three unsuccessful attempts or five minutes, you continue to Round 1: Part B with 0 marks for this part.
+            After three unsuccessful attempts or five minutes, you continue to Round 1: Part B.
           </p>
         </div>
       </section>
@@ -150,17 +143,6 @@
             <div id="chatHistory" class="chat-log" role="log" aria-label="Chat transcript" aria-live="polite">
             </div>
             <form id="promptForm">
-              <label for="targetWord">
-                Ask about
-              </label>
-              <select id="targetWord">
-                <option value="1">
-                  Word 1
-                </option>
-                <option value="2">
-                  Word 2
-                </option>
-              </select>
               <label for="promptInput">
                 Your prompt
               </label>
@@ -184,31 +166,7 @@
               </div>
               <p id="answerFeedback" class="message" role="status"></p>
             </section>
-            <section class="panel">
-              <h2>
-                Prompt quality
-              </h2>
-              <p id="qualitySummary">
-                Prompt quality pending
-              </p>
-              <ul class="rubric">
-                <li>
-                  State a clear task and identify the target word.
-                </li>
-                <li>
-                  Use the cipher clues and relevant context.
-                </li>
-                <li>
-                  Specify useful constraints and the response format.
-                </li>
-                <li>
-                  Test an example or refine your next prompt using the reply.
-                </li>
-              </ul>
-              <p class="muted">
-                Organisers grade your transcript after the session ends.
-              </p>
-            </section>
+
           </aside>
         </div>
         <div class="actions">
@@ -229,18 +187,12 @@
         </h1>
         <p id="finishMessage">
         </p>
-        <div id="finalScores" class="scorebar">
-        </div>
-        <p id="qualityReviewStatus" class="muted">
-        </p>
         <h2>
           Chat transcript
         </h2>
         <div id="finalTranscript" class="chat-log">
         </div>
       </section>
-      <div id="liveScores" class="scorebar" hidden>
-      </div>
       <footer>
         Time limits continue during a refresh or connection loss. All results come from the event server.
       </footer>

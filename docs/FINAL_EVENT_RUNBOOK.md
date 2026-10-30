@@ -148,3 +148,7 @@ Use the Windows fallback if the public site remains unavailable for more than tw
 - [Hosted team site](https://ai-think-hack-create.onrender.com/)
 - [Hosted admin login](https://ai-think-hack-create.onrender.com/admin-login)
 - [Hosted health check](https://ai-think-hack-create.onrender.com/api/health)
+
+## Participant display and prompt routing
+
+Teams see correct or incorrect submissions, timers, prompts and unlocked hints. Scores and prompt-quality grades are available only to organizers in admin and exports. There is no word selector in chat. The server checks each meaningful prompt against the techniques assigned to both words and labels released hints with the associated word number. A prompt can unlock both words if it matches both groups.

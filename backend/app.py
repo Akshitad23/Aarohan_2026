@@ -55,9 +55,22 @@ def admin_required(func):
         return func(*args, **kwargs)
     return checked
 
+def participant_payload(value):
+    """Keep scoring and judging telemetry on organizer routes only."""
+    if isinstance(value, list):
+        return [participant_payload(item) for item in value]
+    if isinstance(value, dict):
+        return {key: participant_payload(item) for key, item in value.items()
+                if not any(part in key.lower() for part in ('score', 'marks', 'quality', 'evaluation'))
+                and key not in ('detected_technique', 'detected_techniques', 'target')}
+    return value
+
 @app.errorhandler(service.EventError)
 def event_error(error):
-    return jsonify({'error':str(error),**error.details}), error.status
+    payload = {'error':str(error),**error.details}
+    if not request.path.startswith('/api/admin/'):
+        payload = participant_payload(payload)
+    return jsonify(payload), error.status
 
 def database_error(error):
     app.logger.error('Database operation failed (%s).', type(error).__name__)
@@ -116,7 +129,7 @@ def event_status():
 
 @app.post('/api/tg/session/start')
 def start_session():
-    return jsonify(service.get_state(team_token()))
+    return jsonify(participant_payload(service.get_state(team_token())))
 
 @app.get('/api/tg/session/status')
 def session_status():
@@ -128,23 +141,23 @@ def session_status():
                 raise ValueError
         except ValueError:
             raise service.EventError('history_after must be a nonnegative turn number.')
-    return jsonify(service.get_state(team_token(), history_after=after))
+    return jsonify(participant_payload(service.get_state(team_token(), history_after=after)))
 
 @app.post('/api/tg/round1/submit')
 def timeline_submit():
-    return jsonify(service.mutate(team_token(), 'timeline', body()))
+    return jsonify(participant_payload(service.mutate(team_token(), 'timeline', body())))
 
 @app.post('/api/tg/round2/prompt')
 def prompt():
-    return jsonify(service.prompt(team_token(), body()))
+    return jsonify(participant_payload(service.prompt(team_token(), body())))
 
 @app.post('/api/tg/round2/answer')
 def answer():
-    return jsonify(service.mutate(team_token(), 'answer', body()))
+    return jsonify(participant_payload(service.mutate(team_token(), 'answer', body())))
 
 @app.post('/api/tg/round2/finish')
 def finish():
-    return jsonify(service.mutate(team_token(), 'finish', body()))
+    return jsonify(participant_payload(service.mutate(team_token(), 'finish', body())))
 
 @app.post('/api/admin/login')
 def admin_login():

@@ -290,7 +290,7 @@ def mutate(token, action, data):
             if not engine.round2_started:
                 raise EventError('Round 1: Part B has not started.', 409)
             finish_session(engine, 'submitted')
-            result = {'message': 'Your score has been submitted.'}
+            result = {'message': 'Your responses have been recorded.'}
         else:
             raise EventError('Unknown action.')
         save(conn, engine)
@@ -300,9 +300,7 @@ def prompt(token, data):
     message = str(data.get('message', data.get('prompt', ''))).strip()
     if not message or len(message) > 2000:
         raise EventError('Enter a prompt up to 2000 characters.')
-    target = data.get('target')
-    if target is not None and not valid_target(target):
-        raise EventError('Choose word 1 or word 2.')
+    target = None
     reservation = secrets.token_hex(16)
     with transaction() as conn:
         team = authorized_team(conn, token)

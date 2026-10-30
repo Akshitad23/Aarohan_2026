@@ -23,14 +23,6 @@
   const teamToken = access.token;
   $('teamName').textContent = access.team?.team_name || 'Your team';
 
-  function scores(target, state) {
-    const r1 = state.round1 || {}; const r2 = state.round2 || {};
-    const words = r2.words || [];
-    const objective = state.objective_score ?? (Number(r1.score || 0) + words.reduce((sum, word) => sum + Number(word.score || 0), 0));
-    const reviewed = state.quality_status === 'reviewed' || state.quality_reviewed;
-    const values = [[`${r1.score || 0} / 2`, 'Timeline'], [`${words[0]?.score || 0} / 2`, 'Word 1'], [`${words[1]?.score || 0} / 2`, 'Word 2'], [`${objective} / 6`, 'Objective marks'], [reviewed ? `${r2.quality_marks} / 4` : 'Pending', 'Prompt quality'], [reviewed ? `${state.final_score ?? state.total_score} / 10` : 'Pending', 'Final score']];
-    target.replaceChildren(...values.map(([value, label]) => { const card = api.node('div', undefined, 'score'); card.append(api.node('strong', value), api.node('span', label)); return card; }));
-  }
   function renderTimeline() {
     $('timeline').replaceChildren();
     draft.forEach((id, index) => {
@@ -76,14 +68,14 @@
       const card = api.node('section', undefined, 'word-card');
       card.append(api.node('h3', `Word ${index} ${word.solved ? '(decoded)' : ''}`), api.node('div', word.ciphertext || '', 'ciphertext'));
       if (word.hint) card.append(api.node('p', typeof word.hint === 'string' ? word.hint : [word.hint.name, word.hint.instructions, word.hint.example].filter(Boolean).join('\n'), 'message'));
-      if (word.solved) card.append(api.node('p', '2 / 2 marks recorded', 'success'));
+      if (word.solved) card.append(api.node('p', 'Correctly decoded', 'success'));
       else {
         const form = api.node('form'); const label = api.node('label', `Decoded word ${index}`); label.htmlFor = `answer${index}`;
         const input = api.node('input'); input.id = label.htmlFor; input.required = true; input.maxLength = 80; input.autocomplete = 'off'; input.spellcheck = false; input.value = answers[input.id] || '';
         const action = api.node('div', undefined, 'actions'); const button = api.node('button', `Submit word ${index}`); button.type = 'submit'; action.append(button);
         form.append(label, input, action); form.onsubmit = async event => { event.preventDefault(); await mutate('/api/tg/round2/answer', {word_index:index, answer:input.value.trim()}, result => {
           const updated = unwrap(result).round2?.words?.find(item => item.index === index);
-          $('answerFeedback').textContent = result.message || (updated?.solved || result.correct ? `Word ${index} is correct. 2 marks recorded.` : `Word ${index} is not correct yet. Try again.`);
+          $('answerFeedback').textContent = result.message || (updated?.solved || result.correct ? `Word ${index} is correct.` : `Word ${index} is not correct yet. Try again.`);
         }); };
         card.append(form);
       }
@@ -97,7 +89,6 @@
     $('finishGame').disabled = busy;
     $('words').querySelectorAll('button,input').forEach(element => { element.disabled = busy || expired; });
     $('promptInput').disabled = busy || expired;
-    $('targetWord').disabled = busy || expired;
     $('timeline').querySelectorAll('button').forEach(button => { if (busy || expired) button.disabled = true; });
   }
   function render(state) {
@@ -110,7 +101,6 @@
     for (const phase of ['waiting', 'round1', 'round2', 'finished']) $(phase).hidden = state.phase !== phase;
     if (state.team?.team_name || state.team_name) $('teamName').textContent = [state.team?.team_name || state.team_name, state.event?.name].filter(Boolean).join(' / ');
     const r1 = state.round1 || {}; const r2 = state.round2 || {};
-    $('liveScores').hidden = !['round1','round2'].includes(state.phase); scores($('liveScores'), state);
     if (state.phase === 'round1') {
       cards = r1.milestones || [];
       if (!draft.length) {
@@ -122,9 +112,8 @@
       $('attempts').textContent = `${r1.attempts_left ?? 3 - (r1.attempts || 0)} attempts left`;
     }
     if (state.phase === 'round2') {
-      $('round1Outcome').textContent = r1.score === 2 ? 'Timeline restored. 2 marks recorded.' : 'Round 1: Part A is over. Continue with the two cipher words in Round 1: Part B.';
+      $('round1Outcome').textContent = 'Round 1: Part A is over. Continue with the two cipher words in Round 1: Part B.';
       $('promptCount').textContent = `${r2.prompt_count || 0} prompts`;
-      $('qualitySummary').textContent = state.quality_status === 'reviewed' || state.quality_reviewed ? `${r2.quality_marks} / 4 marks, reviewed` : 'Prompt quality pending';
       const nextWords = JSON.stringify(r2.words || []);
       if (nextWords !== wordsSignature || oldPhase !== 'round2') { wordsSignature = nextWords; renderWords(r2.words || []); }
     }
@@ -132,9 +121,7 @@
     const signature = JSON.stringify(history);
     if (signature !== historySignature || oldPhase !== state.phase) { historySignature = signature; transcript($('chatHistory'), history); transcript($('finalTranscript'), history); }
     if (state.phase === 'finished') {
-      scores($('finalScores'), state);
-      $('finishMessage').textContent = `${(r2.words || []).filter(word => word.solved).length} of 2 words decoded. Your timeline and word marks are saved.`;
-      $('qualityReviewStatus').textContent = state.quality_status === 'reviewed' || state.quality_reviewed ? 'The organiser has reviewed your prompt quality score.' : 'Prompt quality and the final score are pending. Organisers grade the saved transcript after this session ends.';
+      $('finishMessage').textContent = `${(r2.words || []).filter(word => word.solved).length} of 2 words decoded. Your responses are saved.`;
     }
     updateControls(); tick();
     if (oldPhase !== state.phase) $(`${state.phase}Heading`).focus();
@@ -179,11 +166,11 @@
   $('promptForm').onsubmit = async event => {
     event.preventDefault(); const message = $('promptInput').value.trim(); if (!message) return;
     $('promptStatus').textContent = 'CHRONOS is responding...';
-    const ok = await mutate('/api/tg/round2/prompt', {message, target:Number($('targetWord').value)});
+    const ok = await mutate('/api/tg/round2/prompt', {message});
     if (ok) $('promptInput').value = ''; $('promptStatus').textContent = ''; if (current?.phase === 'round2' && !accessChanged) $('promptInput').focus();
   };
   $('finishGame').onclick = () => {
-    if (window.confirm('Finish Round 1: Part B now? You will keep your current marks and cannot send more prompts or word answers.')) mutate('/api/tg/round2/finish');
+    if (window.confirm('Finish Round 1: Part B now? Your responses will be saved and you cannot send more prompts or word answers.')) mutate('/api/tg/round2/finish');
   };
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(true); });
   window.addEventListener('online', () => refresh(true));

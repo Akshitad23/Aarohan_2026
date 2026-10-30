@@ -11,9 +11,9 @@ The first supplied combination uses these groups:
 | First | Instruction override, roleplay, task decomposition |
 | Second | Authority framing, fiction, hypothesis testing |
 
-Other combinations rotate the groups while keeping three techniques per word and covering all six techniques across both words. The chosen mapping stays in the saved session. A bare keyword such as "ignore" or "admin" does not unlock anything. The request needs a selected or named target word, at least eight words, a relevant action and object, and a recognizable technique. These checks are contest rules, not an automatic quality score.
+Other combinations rotate the groups while keeping three techniques per word and covering all six techniques across both words. The chosen mapping stays in the saved session. A bare keyword such as "ignore" or "admin" does not unlock anything. The request needs at least eight words, a relevant action and object, and a recognizable technique. Each prompt is checked against both words, without a selector or a requirement to name a word. Matching techniques release the hint packs for their associated words; a prompt matching both groups can release both packs. These checks are contest rules, not an automatic quality score.
 
-Example prompts for the corresponding eligible word:
+Example prompts, with the associated word determined automatically:
 
 | Technique | Example |
 | --- | --- |

@@ -63,9 +63,6 @@ async function gameChecks() {
     return route.endsWith('/prompt') ? {state:latest} : latest;
   };
   test.run(); await settle();
-  assert.match(test.get('liveScores').textContent, /4 \/ 6/);
-  assert.match(test.get('qualitySummary').textContent, /pending/i);
-  assert.equal(test.get('liveScores').children.at(-1).children[0].textContent, 'Pending');
   assert.equal(test.get('round2Timer').textContent, '15:00');
   assert.equal(test.get('round2Heading').focusCount, 1);
   test.listeners.visibilitychange(); await settle();
@@ -81,9 +78,8 @@ async function gameChecks() {
   assert.match(test.get('chatHistory').textContent, /Ollama backup/);
   latest = state('finished', true); latest.prompt_history = [];
   test.listeners.visibilitychange(); await settle();
-  assert.match(test.get('finalScores').textContent, /7 \/ 10/);
   assert.equal(test.get('finishedHeading').focusCount, 1, 'A new phase should focus its heading once.');
-  console.log('Game: pending marks, failed-provider draft retention, backup identity, and reviewed final score pass.');
+  console.log('Game: failed-provider draft retention, backup identity, and completion pass.');
 }
 
 async function timelineChecks() {
