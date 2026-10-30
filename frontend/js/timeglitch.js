@@ -27,7 +27,17 @@
   const unwrap = result => result.state || result;
   if (!access?.token) { location.replace('/'); return; }
   const teamToken = access.token;
+  let draggingId = null;
   $('teamName').textContent = access.team?.team_name || 'Your team';
+
+  function moveCard(fromId, toId) {
+    if (busy || current?.phase !== 'round1' || remainingAt - (performance.now() - receivedAt) / 1000 <= 0) return;
+    const from = draft.indexOf(fromId), to = draft.indexOf(toId);
+    if (from < 0 || to < 0 || from === to) return;
+    draft.splice(to, 0, draft.splice(from, 1)[0]);
+    localStorage.setItem(draftKey, JSON.stringify(draft));
+    renderTimeline();
+  }
 
   function renderTimeline() {
     $('timeline').replaceChildren();
@@ -35,6 +45,27 @@
       const card = cards.find(item => item.id === id);
       if (!card) return;
       const row = api.node('li'); const copy = api.node('div', undefined, 'card-copy');
+      row.dataset.cardId = id;
+      const handle = api.node('span', '⠿', 'drag-handle');
+      handle.draggable = true;
+      handle.setAttribute('aria-hidden', 'true');
+      handle.title = 'Drag to reorder';
+      handle.ondragstart = event => {
+        if (busy || current?.phase !== 'round1') { event.preventDefault(); return; }
+        draggingId = id;
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', id);
+      };
+      handle.ondragend = () => { draggingId = null; };
+      handle.ontouchstart = event => { if (!busy && current?.phase === 'round1') { draggingId = id; event.preventDefault(); } };
+      handle.ontouchend = event => {
+        const touch = event.changedTouches[0];
+        const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.timeline li');
+        if (draggingId && target) moveCard(draggingId, target.dataset.cardId);
+        draggingId = null;
+      };
+      row.ondragover = event => { if (draggingId) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; } };
+      row.ondrop = event => { event.preventDefault(); if (draggingId) moveCard(draggingId, id); draggingId = null; };
       copy.append(api.node('strong', card.title));
       if (card.description) copy.append(api.node('p', card.description));
       const controls = api.node('div', undefined, 'move');
@@ -49,7 +80,7 @@
         };
         controls.append(button);
       }
-      row.append(copy, controls); $('timeline').append(row);
+      row.append(handle, copy, controls); $('timeline').append(row);
     });
   }
   function transcript(target, history) {

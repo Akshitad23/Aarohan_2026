@@ -119,7 +119,11 @@ async function timelineChecks() {
   assert.equal(test.get('round1Heading').focusCount, 1);
   assert.equal(test.get('attempts').textContent, '3 attempts left');
   assert.equal(test.get('timeline').children.length, 5);
-  test.get('timeline').children[0].children[1].children[1].onclick();
+  const first = test.get('timeline').children[0], second = test.get('timeline').children[1];
+  const dataTransfer = {setData() {}, effectAllowed:'', dropEffect:''};
+  first.children[0].ondragstart({dataTransfer, preventDefault() {}});
+  second.ondrop({dataTransfer, preventDefault() {}});
+  assert.equal(test.get('timeline').children[0].dataset.cardId, 'card-1');
   await test.get('submitTimeline').onclick();
   assert.equal(submitted[0], 'card-1');
   assert.equal(submitted[1], 'card-0');
