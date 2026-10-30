@@ -158,7 +158,7 @@
     const wait = Math.max(0, Math.ceil((promptReadyAt - Date.now()) / 1000));
     $('sendPrompt').disabled = busy || expired || wait > 0 || accessChanged;
     $('sendPrompt').textContent = wait > 0 ? `Send in ${wait}s` : 'Send prompt';
-    $('promptInterval').textContent = wait > 0 ? `Next prompt available in ${wait} seconds.` : 'You can send one prompt every 60 seconds.';
+    $('promptInterval').textContent = wait > 0 ? `Next prompt available in ${wait} seconds.` : 'You can send one prompt every 60 seconds Make sure to use them carefully';
     $('finishGame').disabled = busy;
     $('words').querySelectorAll('button,input').forEach(element => { element.disabled = busy || expired; });
     $('promptInput').disabled = busy || expired;
