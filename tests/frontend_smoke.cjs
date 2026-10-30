@@ -64,7 +64,7 @@ async function gameChecks() {
   const test = page('timeglitch.js', {team:{token:'private-test-token', team:{team_id:'T1', team_name:'Test team'}}});
   let latest = state(), rejectPrompt = true;
   test.api.request = async route => {
-    if (route.endsWith('/prompt') && rejectPrompt) { const error = new Error('Both AI providers are unavailable.'); error.state = latest; error.details = {retryable:true, ai_retry_after_seconds:5}; throw error; }
+    if (route.endsWith('/prompt') && rejectPrompt) { const error = new Error('Both AI providers are unavailable.'); error.state = latest; error.details = {retryable:true, ai_retry_after_seconds:5, ai_primary_failure_reason:'team_pacing'}; throw error; }
     return route.endsWith('/prompt') ? {state:latest} : latest;
   };
   test.run(); await settle();
@@ -75,11 +75,13 @@ async function gameChecks() {
   test.get('promptInput').value = 'Keep this prompt when both AI providers fail.';
   await test.get('promptForm').onsubmit({preventDefault() {}});
   assert.equal(test.get('promptInput').value, 'Keep this prompt when both AI providers fail.');
-  assert.match(test.get('gameError').textContent, /Retry in 5 seconds/);
+  assert.match(test.get('promptStatus').textContent, /Please wait.*Retry in 5 seconds/);
+  assert.equal(test.get('promptStatus').className, 'error');
   rejectPrompt = false;
   latest = {...state(), prompt_history:[{turn:1,prompt:'Explain this protocol.',response:'An actual provider response.',ai_mode:'live',ai_provider:'ollama_backup',ai_primary_failure_reason:'budget_rpm'}]};
   await test.get('promptForm').onsubmit({preventDefault() {}});
   assert.equal(test.get('promptInput').value, '');
+  assert.equal(test.get('promptStatus').textContent, '');
   assert.match(test.get('chatHistory').textContent, /CHRONOS/);
   assert.doesNotMatch(test.get('chatHistory').textContent, /Ollama backup/);
   latest = state('finished', true); latest.prompt_history = [];

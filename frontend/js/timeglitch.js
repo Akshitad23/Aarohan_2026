@@ -154,7 +154,23 @@
     } catch (error) {
       if (error.state) render(error.state);
       const delay = Number(error.details?.ai_retry_after_seconds) || 0;
-      $('gameError').textContent = error.message + (error.details?.retryable && delay > 0 ? ` Retry in ${Math.ceil(delay)} seconds.` : '');
+      const reason = error.details?.ai_primary_failure_reason || error.details?.ai_fallback_reason;
+      const explanation = {
+        team_pacing: 'Please wait before sending your next prompt.',
+        fair_turn: 'Another team has the next turn. Please retry shortly.',
+        concurrency: 'CHRONOS is answering other teams. Please retry shortly.',
+        budget_rpm: 'Chat capacity is busy. Please retry shortly.',
+        budget_tpm: 'Chat capacity is busy. Please retry shortly.',
+        provider_429: 'CHRONOS is temporarily busy. Please retry shortly.',
+        rejected_output: 'CHRONOS could not return a valid reply. Please retry your prompt.'
+      }[reason] || error.message;
+      const feedback = explanation + (error.details?.retryable && delay > 0 ? ` Retry in ${Math.ceil(delay)} seconds.` : '');
+      if (path.endsWith('/prompt')) {
+        $('promptStatus').textContent = feedback;
+        $('promptStatus').className = 'error';
+      } else {
+        $('gameError').textContent = feedback;
+      }
       return false;
     } finally { busy = false; updateControls(); if (current?.phase === 'round1') renderTimeline(); }
   }
@@ -169,9 +185,12 @@
   });
   $('promptForm').onsubmit = async event => {
     event.preventDefault(); const message = $('promptInput').value.trim(); if (!message) return;
+    if (busy || accessChanged) return;
+    $('promptStatus').className = 'muted';
     $('promptStatus').textContent = 'CHRONOS is responding...';
     const ok = await mutate('/api/tg/round2/prompt', {message});
-    if (ok) $('promptInput').value = ''; $('promptStatus').textContent = ''; if (current?.phase === 'round2' && !accessChanged) $('promptInput').focus();
+    if (ok) { $('promptInput').value = ''; $('promptStatus').textContent = ''; }
+    if (current?.phase === 'round2' && !accessChanged) $('promptInput').focus();
   };
   $('finishGame').onclick = () => {
     if (window.confirm('Finish Round 1: Part B now? Your responses will be saved and you cannot send more prompts or word answers.')) mutate('/api/tg/round2/finish');
