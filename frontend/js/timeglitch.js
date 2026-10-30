@@ -17,6 +17,12 @@
   let historySignature = '';
   let wordsSignature = '';
   const draftKey = `aarohan_timeline_draft_${access?.team?.team_id || 'team'}`;
+  const cooldownKey = `aarohan_prompt_cooldown_${access?.team?.team_id || 'team'}`;
+  let promptReadyAt = Number(localStorage.getItem(cooldownKey)) || 0;
+  function setPromptReadyAt(timestamp) {
+    promptReadyAt = timestamp;
+    localStorage.setItem(cooldownKey, String(timestamp));
+  }
   const format = seconds => `${Math.floor(Math.max(0, seconds) / 60).toString().padStart(2, '0')}:${Math.ceil(Math.max(0, seconds) % 60).toString().padStart(2, '0')}`;
   const unwrap = result => result.state || result;
   if (!access?.token) { location.replace('/'); return; }
@@ -83,7 +89,10 @@
   function updateControls() {
     const expired = current && current.phase !== 'waiting' && current.phase !== 'finished' && remainingAt - (performance.now() - receivedAt) / 1000 <= 0;
     $('submitTimeline').disabled = busy || expired || !cards.length;
-    $('sendPrompt').disabled = busy || expired;
+    const wait = Math.max(0, Math.ceil((promptReadyAt - Date.now()) / 1000));
+    $('sendPrompt').disabled = busy || expired || wait > 0 || accessChanged;
+    $('sendPrompt').textContent = wait > 0 ? `Send in ${wait}s` : 'Send prompt';
+    $('promptInterval').textContent = wait > 0 ? `Next prompt available in ${wait} seconds.` : 'You can send one prompt every 60 seconds.';
     $('finishGame').disabled = busy;
     $('words').querySelectorAll('button,input').forEach(element => { element.disabled = busy || expired; });
     $('promptInput').disabled = busy || expired;
@@ -98,6 +107,7 @@
     if (state.phase === 'finished') {
       api.clearTeam(teamToken);
       localStorage.removeItem(draftKey);
+      localStorage.removeItem(cooldownKey);
       $('teamName').textContent = '';
       $('chatHistory').replaceChildren();
       $('words').replaceChildren();
@@ -166,6 +176,7 @@
       }[reason] || error.message;
       const feedback = explanation + (error.details?.retryable && delay > 0 ? ` Retry in ${Math.ceil(delay)} seconds.` : '');
       if (path.endsWith('/prompt')) {
+        if (error.details?.retryable && delay > 0) setPromptReadyAt(Date.now() + delay * 1000);
         $('promptStatus').textContent = feedback;
         $('promptStatus').className = 'error';
       } else {
@@ -176,6 +187,7 @@
   }
   function tick() {
     if (!current || !['round1','round2'].includes(current.phase)) return;
+    updateControls();
     const remaining = Math.max(0, remainingAt - (performance.now() - receivedAt) / 1000);
     $(`${current.phase}Timer`).textContent = format(Math.ceil(remaining));
     if (!remaining) { updateControls(); refresh(); }
@@ -185,11 +197,13 @@
   });
   $('promptForm').onsubmit = async event => {
     event.preventDefault(); const message = $('promptInput').value.trim(); if (!message) return;
-    if (busy || accessChanged) return;
+    if (busy || accessChanged || Date.now() < promptReadyAt) { updateControls(); return; }
+    const sentAt = Date.now();
     $('promptStatus').className = 'muted';
     $('promptStatus').textContent = 'CHRONOS is responding...';
     const ok = await mutate('/api/tg/round2/prompt', {message});
-    if (ok) { $('promptInput').value = ''; $('promptStatus').textContent = ''; }
+    if (ok) { setPromptReadyAt(sentAt + 60000); $('promptInput').value = ''; $('promptStatus').textContent = ''; }
+    updateControls();
     if (current?.phase === 'round2' && !accessChanged) $('promptInput').focus();
   };
   $('finishGame').onclick = () => {
