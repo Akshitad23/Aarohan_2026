@@ -58,6 +58,9 @@
     $('endEvent').hidden = !active || ended || !event.status;
     $('endEvent').disabled = changingEvent;
     $('endEvent').textContent = `End ${batchName(selectedBatchId)}`;
+    $('lateRegistration').hidden = !active || !running;
+    $('lateRegistration').disabled = changingEvent;
+    $('lateRegistration').textContent = event.registration_open ? 'Extend registration by 2 minutes' : 'Open registration for 2 minutes';
     reviewAccess();
   }
   function renderHealth(health) {
@@ -198,6 +201,7 @@
     } catch (error) { checkAuth(error); $('adminError').textContent = error.message; $('newTest').disabled = false; }
   };
   $('startEvent').onclick = () => changeEvent('start');
+  $('lateRegistration').onclick = () => changeEvent('late-registration');
   $('endEvent').onclick = () => { if (window.confirm(`End the ${batchName(selectedBatchId)} session? Its teams cannot continue, and its results will be available for grading.`)) changeEvent('end'); };
   $('refresh').onclick = refresh; $('teamSearch').oninput = renderTable;
   $('closeReview').onclick = () => { reviewVersion++; $('reviewPanel').hidden = true; reviewId = null; };

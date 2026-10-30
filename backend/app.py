@@ -203,6 +203,11 @@ def event_start():
     data=body() if request.data else {}
     return jsonify(event=service.start_event(data.get('batch_id')))
 
+@app.post('/api/admin/event/late-registration')
+@admin_required
+def event_late_registration():
+    return jsonify(event=service.open_late_registration(body().get('batch_id')))
+
 @app.post('/api/admin/event/end')
 @admin_required
 def event_end():

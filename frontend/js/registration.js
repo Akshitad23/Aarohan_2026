@@ -6,11 +6,12 @@
   let registrationEvent = null;
   let submitting = false;
   let savedBatchName = saved?.team?.batch_name || saved?.team?.batch_id || '';
+  const registrationOpen = event => event?.registration_open ?? event?.status === 'waiting';
   function showRegistration(event) {
     registrationEvent = event;
     const name = event.name || event.batch_id;
-    $('registrationBatch').textContent = event.status === 'waiting' ? `Registering for the ${name} session` : `${name} registration is closed.`;
-    $('submitButton').disabled = submitting || event.status !== 'waiting';
+    $('registrationBatch').textContent = registrationOpen(event) ? `Registering for the ${name} session${event.status === 'running' ? ' (late registration)' : ''}` : `${name} registration is closed.`;
+    $('submitButton').disabled = submitting || !registrationOpen(event);
   }
   async function refreshRegistration() {
     if (submitting || document.hidden) return;
@@ -71,10 +72,10 @@
   $('registrationForm').onsubmit = async event => {
     event.preventDefault(); $('formMessage').textContent = ''; submitting = true; $('submitButton').disabled = true;
     try {
-      if (!registrationEvent || registrationEvent.status !== 'waiting') throw new Error('Registration is not open.');
+      if (!registrationOpen(registrationEvent)) throw new Error('Registration is not open.');
       const selectedBatch = registrationEvent.batch_id;
       const latest = (await api.request('/api/event/status')).event;
-      if (latest.batch_id !== selectedBatch || latest.status !== 'waiting') {
+      if (latest.batch_id !== selectedBatch || !registrationOpen(latest)) {
         showRegistration(latest);
         throw new Error('The registration session changed. Check the session shown above before submitting again.');
       }
@@ -84,7 +85,7 @@
       if (!result.team_token) throw new Error('Registration returned no team access code. Contact the organiser before registering again.');
       api.saveTeam(result.team, result.team_token); location.assign('/game');
     } catch (error) { $('formMessage').textContent = error.message; }
-    finally { submitting = false; $('submitButton').disabled = registrationEvent?.status !== 'waiting'; }
+    finally { submitting = false; $('submitButton').disabled = !registrationOpen(registrationEvent); }
   };
   $('resumeForm').onsubmit = async event => {
     event.preventDefault(); const button = event.submitter; button.disabled = true; $('resumeError').textContent = '';

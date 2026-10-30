@@ -22,6 +22,27 @@ import event_service as service
 from timeglitch_engine import ROUND1_SECONDS,ROUND2_SECONDS,TimeglitchSession
 
 class EventTests(unittest.TestCase):
+    def test_late_registration_window_and_team_timer(self):
+        early = self.register('Early')
+        self.start()
+        with logger_db.transaction() as conn:
+            conn.execute("UPDATE event_sessions SET started_at=? WHERE batch_id='morning'", (time.time() - 180,))
+        self.assertEqual(self.client.post('/api/teams/register', json={'teamName':'Late','schoolName':'School','participants':[{'name':'Student','grade':'11'}]}).status_code, 409)
+        opened = self.client.post('/api/admin/event/late-registration', headers=self.admin, json={'batch_id':'morning'})
+        self.assertEqual(opened.status_code, 200)
+        self.assertTrue(opened.json['event']['registration_open'])
+        late = self.register('Late')
+        early_state = service.get_state(early['team_token'])
+        late_state = service.get_state(late['team_token'])
+        self.assertLess(early_state['round1']['remaining_seconds'], 125)
+        self.assertGreater(late_state['round1']['remaining_seconds'], 290)
+        self.assertGreater(late_state['round1']['deadline'], early_state['round1']['deadline'] + 170)
+        with logger_db.transaction() as conn:
+            conn.execute("UPDATE late_registration SET open_until=? WHERE batch_id='morning'", (time.time()-1,))
+        self.assertEqual(self.client.post('/api/teams/register', json={'teamName':'Too late','schoolName':'School','participants':[{'name':'Student','grade':'11'}]}).status_code, 409)
+        service.end_event('morning')
+        self.assertEqual(self.client.post('/api/admin/event/late-registration', headers=self.admin, json={'batch_id':'morning'}).status_code, 409)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         logger_db.DB_PATH = Path(self.temp.name) / 'test.sqlite3'

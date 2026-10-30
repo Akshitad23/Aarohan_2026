@@ -30,9 +30,12 @@ def event_state(conn, batch_id=None):
     row = conn.execute('SELECT * FROM event_sessions WHERE batch_id=?', (batch_id or active,)).fetchone()
     if not row:
         raise EventError('Event session not found.', 404)
+    late = conn.execute('SELECT open_until FROM late_registration WHERE batch_id=?', (row['batch_id'],)).fetchone()
+    until = late['open_until'] if late and row['started_at'] and not row['ended_at'] else None
     return {'batch_id':row['batch_id'], 'name':row['name'], 'active_batch_id':active,
             'status': 'ended' if row['ended_at'] else 'running' if row['started_at'] else 'waiting',
-            'started_at': row['started_at'], 'ended_at': row['ended_at']}
+            'started_at': row['started_at'], 'ended_at': row['ended_at'],
+            'late_registration_until': until, 'registration_open': not row['ended_at'] and (not row['started_at'] or bool(until and time.time() < until))}
 
 def list_batches(conn):
     return [event_state(conn, row['batch_id']) for row in conn.execute("SELECT batch_id FROM event_sessions ORDER BY CASE WHEN batch_id='pretest' THEN 0 WHEN batch_id='test' OR batch_id LIKE 'test-%' THEN 1 WHEN batch_id='morning' THEN 2 WHEN batch_id='afternoon' THEN 3 ELSE 4 END,batch_id")]
@@ -70,13 +73,16 @@ def register(data):
         batch_id = event['batch_id']
         if data.get('batch_id') and data['batch_id'] != batch_id:
             raise EventError('Registration has moved to another event session. Refresh the registration page.', 409)
-        if event['status'] != 'waiting':
+        if not event['registration_open']:
             raise EventError('Registration has closed because the event has started.', 409)
         if conn.execute('SELECT 1 FROM teams WHERE batch_id=? AND LOWER(team_name)=LOWER(?)', (batch_id,name)).fetchone():
             raise EventError('That team name is already registered. Resume with your team token.', 409)
+        registered_at = time.time()
         conn.execute('INSERT INTO teams(team_id,team_name,school_name,participants,registered_at,token_hash,batch_id) VALUES(?,?,?,?,?,?,?)',
-                     (team_id, name, school, json.dumps(clean), time.time(), digest(token),batch_id))
+                     (team_id, name, school, json.dumps(clean), registered_at, digest(token),batch_id))
         engine = TimeglitchSession(team_id, name, batch_id=batch_id)
+        if event['status'] == 'running':
+            engine.late_start_timestamp = registered_at
         conn.execute('INSERT INTO game_sessions(session_id,team_id,state) VALUES(?,?,?)',
                      (engine.session_id, team_id, json.dumps(engine.to_storage())))
         row = conn.execute('SELECT * FROM teams WHERE team_id=?', (team_id,)).fetchone()
@@ -166,7 +172,7 @@ def load(conn, team, history_after=None, include_history=True):
 
 def refresh(engine, event):
     if event['started_at']:
-        engine.start_time = datetime.fromtimestamp(event['started_at'])
+        engine.start_time = datetime.fromtimestamp(getattr(engine, 'late_start_timestamp', event['started_at']))
         engine.get_status()
     if event['ended_at'] and not engine.is_finished:
         if engine.round2_started:
@@ -207,7 +213,7 @@ def snapshot(engine, row, event):
         return state
     r1, r2 = state['round1'], state['round2']
     r1['attempts_left'] = max(0, 3 - engine.round1_attempts)
-    r1['deadline'] = event['started_at'] + ROUND1_SECONDS if event['started_at'] else None
+    r1['deadline'] = engine.start_time.timestamp() + ROUND1_SECONDS if event['started_at'] else None
     if engine.round2_start_time:
         r2['deadline'] = engine.round2_start_time.timestamp() + ROUND2_SECONDS
     for index, word in enumerate(r2.get('words', []), 1):
@@ -385,6 +391,15 @@ def expire_prompt_requests(conn,session_id,now):
     for request in conn.execute("SELECT request_id FROM prompt_requests WHERE session_id=? AND status='pending' AND lease_until<=?",(session_id,now)).fetchall():
         record_prompt_failure(conn,request['request_id'],{'error':'The server stopped processing this request before an outcome was saved.',
             'ai_fallback_reason':'request_interrupted','ai_retry_after_seconds':0,'retryable':True})
+
+def open_late_registration(batch_id):
+    with transaction() as conn:
+        event = event_state(conn, batch_id)
+        if event['batch_id'] != event['active_batch_id'] or event['status'] != 'running':
+            raise EventError('Late registration is available only for the active running session.', 409)
+        until = time.time() + 120
+        conn.execute('INSERT INTO late_registration(batch_id,open_until) VALUES(?,?) ON CONFLICT(batch_id) DO UPDATE SET open_until=excluded.open_until', (event['batch_id'], until))
+        return event_state(conn, event['batch_id'])
 
 def start_event(batch_id=None):
     with transaction() as conn:
