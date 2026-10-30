@@ -119,10 +119,7 @@
     }
     const history = state.prompt_history || r2.prompt_history || [];
     const signature = JSON.stringify(history);
-    if (signature !== historySignature || oldPhase !== state.phase) { historySignature = signature; transcript($('chatHistory'), history); transcript($('finalTranscript'), history); }
-    if (state.phase === 'finished') {
-      $('finishMessage').textContent = `${(r2.words || []).filter(word => word.solved).length} of 2 words decoded. Your responses are saved.`;
-    }
+    if (signature !== historySignature || oldPhase !== state.phase) { historySignature = signature; transcript($('chatHistory'), history); }
     updateControls(); tick();
     if (oldPhase !== state.phase) $(`${state.phase}Heading`).focus();
   }
