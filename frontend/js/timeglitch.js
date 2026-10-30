@@ -16,6 +16,7 @@
   let cards = [];
   let historySignature = '';
   let wordsSignature = '';
+  const answerFeedback = {};
   const draftKey = `aarohan_timeline_draft_${access?.team?.team_id || 'team'}`;
   const cooldownKey = `aarohan_prompt_cooldown_${access?.team?.team_id || 'team'}`;
   let promptReadyAt = Number(localStorage.getItem(cooldownKey)) || 0;
@@ -144,10 +145,15 @@
         const input = api.node('input'); input.id = label.htmlFor; input.required = true; input.maxLength = 80; input.autocomplete = 'off'; input.spellcheck = false; input.value = answers[input.id] || '';
         const action = api.node('div', undefined, 'actions'); const button = api.node('button', `Submit word ${index}`); button.type = 'submit'; action.append(button);
         form.append(label, input, action); form.onsubmit = async event => { event.preventDefault(); await mutate('/api/tg/round2/answer', {word_index:index, answer:input.value.trim()}, result => {
-          const updated = unwrap(result).round2?.words?.find(item => item.index === index);
-          $('answerFeedback').textContent = result.message || (updated?.solved || result.correct ? `Word ${index} is correct.` : `Word ${index} is not correct yet. Try again.`);
+          answerFeedback[index] = result.correct ? '' : 'That word is incorrect. Check your decoding steps.';
+          const feedback = $(`answerFeedback${index}`);
+          if (feedback) feedback.textContent = answerFeedback[index];
         }); };
         card.append(form);
+        const feedback = api.node('p', answerFeedback[index] || '', 'message error');
+        feedback.id = `answerFeedback${index}`;
+        feedback.setAttribute('role', 'status');
+        card.append(feedback);
       }
       $('words').append(card);
     });
