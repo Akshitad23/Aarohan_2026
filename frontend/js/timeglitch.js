@@ -28,7 +28,7 @@
   if (!access?.token) { location.replace('/'); return; }
   const teamToken = access.token;
   let draggingId = null;
-  let dragTarget = null, touchGhost = null;
+  let dragTarget = null, dragGhost = null, dragSource = null;
   $('teamName').textContent = access.team?.team_name || 'Your team';
 
   function moveCard(fromId, toId) {
@@ -48,11 +48,13 @@
   }
   function clearDrag() {
     markDragTarget(null);
-    touchGhost?.remove(); touchGhost = null;
+    dragGhost?.remove(); dragGhost = null;
+    dragSource?.classList.remove('drag-source'); dragSource = null;
     draggingId = null;
   }
 
   function renderTimeline() {
+    clearDrag();
     $('timeline').replaceChildren();
     draft.forEach((id, index) => {
       const card = cards.find(item => item.id === id);
@@ -60,47 +62,45 @@
       const row = api.node('li'); const copy = api.node('div', undefined, 'card-copy');
       row.dataset.cardId = id;
       const handle = api.node('span', '⠿', 'drag-handle');
-      handle.draggable = true;
       handle.setAttribute('aria-hidden', 'true');
       handle.title = 'Drag to reorder';
-      handle.ondragstart = event => {
-        if (busy || current?.phase !== 'round1') { event.preventDefault(); return; }
-        draggingId = id;
-        event.dataTransfer.effectAllowed = 'move';
-        event.dataTransfer.setData('text/plain', id);
-        const bounds = row.getBoundingClientRect();
-        event.dataTransfer.setDragImage(row, Math.max(0, event.clientX - bounds.left), Math.max(0, event.clientY - bounds.top));
-      };
-      handle.ondragend = clearDrag;
-      handle.ontouchstart = event => {
-        if (busy || current?.phase !== 'round1') return;
-        draggingId = id; event.preventDefault();
-        const bounds = row.getBoundingClientRect();
-        touchGhost = row.cloneNode(true);
-        touchGhost.classList.add('drag-ghost');
-        touchGhost.style.width = `${bounds.width}px`;
-        document.body.append(touchGhost);
-        const touch = event.touches[0];
-        touchGhost.style.left = `${bounds.left}px`;
-        touchGhost.style.top = `${touch.clientY - bounds.height / 2}px`;
-      };
-      handle.ontouchmove = event => {
-        if (!draggingId || !touchGhost) return;
+      let pointerId = null, offsetX = 0, offsetY = 0;
+      handle.ondragstart = event => event.preventDefault();
+      handle.onpointerdown = event => {
+        if (busy || draggingId || current?.phase !== 'round1' || event.button !== 0) return;
+        if (remainingAt - (performance.now() - receivedAt) / 1000 <= 0) return;
         event.preventDefault();
-        const touch = event.touches[0];
-        touchGhost.style.top = `${touch.clientY - touchGhost.offsetHeight / 2}px`;
-        const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.timeline li');
+        const bounds = row.getBoundingClientRect();
+        offsetX = event.clientX - bounds.left; offsetY = event.clientY - bounds.top;
+        draggingId = id; dragSource = row; pointerId = event.pointerId;
+        dragGhost = row.cloneNode(true);
+        dragGhost.classList.add('drag-ghost');
+        dragGhost.setAttribute('aria-hidden', 'true');
+        dragGhost.style.width = `${bounds.width}px`;
+        dragGhost.style.height = `${bounds.height}px`;
+        dragGhost.style.left = `${bounds.left}px`;
+        dragGhost.style.top = `${bounds.top}px`;
+        document.body.append(dragGhost);
+        row.classList.add('drag-source');
+        handle.setPointerCapture(pointerId);
+      };
+      handle.onpointermove = event => {
+        if (event.pointerId !== pointerId || !dragGhost) return;
+        event.preventDefault();
+        dragGhost.style.left = `${event.clientX - offsetX}px`;
+        dragGhost.style.top = `${event.clientY - offsetY}px`;
+        const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('.timeline li');
         markDragTarget(target && target.dataset.cardId !== draggingId ? target : null);
       };
-      handle.ontouchend = event => {
-        const touch = event.changedTouches[0];
-        const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.timeline li');
-        if (draggingId && target) moveCard(draggingId, target.dataset.cardId);
+      handle.onpointerup = event => {
+        if (event.pointerId !== pointerId) return;
+        const from = draggingId, to = dragTarget?.dataset.cardId;
+        pointerId = null;
         clearDrag();
+        if (to) moveCard(from, to);
       };
-      handle.ontouchcancel = clearDrag;
-      row.ondragover = event => { if (draggingId) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; markDragTarget(id !== draggingId ? row : null); } };
-      row.ondrop = event => { event.preventDefault(); if (draggingId) moveCard(draggingId, id); clearDrag(); };
+      handle.onpointercancel = () => { pointerId = null; clearDrag(); };
+      handle.onlostpointercapture = () => { pointerId = null; clearDrag(); };
       copy.append(api.node('strong', card.title));
       if (card.description) copy.append(api.node('p', card.description));
       const controls = api.node('div', undefined, 'move');
@@ -154,6 +154,7 @@
   }
   function updateControls() {
     const expired = current && current.phase !== 'waiting' && current.phase !== 'finished' && remainingAt - (performance.now() - receivedAt) / 1000 <= 0;
+    if (draggingId && (busy || expired || current?.phase !== 'round1')) clearDrag();
     $('submitTimeline').disabled = busy || expired || !cards.length;
     const wait = Math.max(0, Math.ceil((promptReadyAt - Date.now()) / 1000));
     $('sendPrompt').disabled = busy || expired || wait > 0 || accessChanged;

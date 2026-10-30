@@ -184,8 +184,9 @@ main > .eyebrow, .panel > .eyebrow { padding-bottom: 15px; border-bottom: 2px so
 .timeline .card-copy { flex: 1; }
 .timeline .drag-handle { flex: 0 0 auto; padding: 6px; color: var(--muted); font-size: 28px; line-height: 1; cursor: grab; touch-action: none; user-select: none; }
 .timeline .drag-handle:active { cursor: grabbing; }
+.timeline li.drag-source { visibility: hidden; }
 .timeline li.drop-target { outline: 3px solid var(--accent); outline-offset: 2px; }
-.drag-ghost { position: fixed; z-index: 1000; pointer-events: none; display: flex; gap: 17px; align-items: center; padding: 20px; border: 2px solid var(--accent); border-radius: 3px; background: var(--paper-light); box-shadow: 0 12px 28px rgba(0,0,0,.25); opacity: .95; }
+.drag-ghost { box-sizing: border-box; position: fixed; z-index: 1000; pointer-events: none; display: flex; gap: 17px; align-items: center; padding: 20px; border: 2px solid var(--accent); border-radius: 3px; background: var(--paper-light); box-shadow: 0 12px 28px rgba(0,0,0,.25); opacity: 1; }
 .drag-ghost .card-copy { flex: 1; }
 .timeline .card-copy strong { font-size: 18px; font-weight: 600; line-height: 1.45; }
 .timeline p { margin: 5px 0 0; color: var(--muted); font-size: 14px; line-height: 1.5; }

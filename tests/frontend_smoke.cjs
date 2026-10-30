@@ -17,6 +17,12 @@ class Element {
   querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
   setAttribute(name, value) { this[name] = value; }
   getBoundingClientRect() { return {left:0,top:0,width:500,height:100}; }
+  get classList() { return {add:name => { this.className += ' ' + name; },remove:name => { this.className = this.className.split(' ').filter(item => item !== name).join(' '); },contains:name => this.className.split(' ').includes(name)}; }
+  cloneNode() { const clone = new Element(this.tagName); clone.style = {}; clone.className = this.className; return clone; }
+  remove() { this.removed = true; }
+  setPointerCapture() {}
+  closest() { return this; }
+
   focus() { this.focusCount = (this.focusCount || 0) + 1; } scrollIntoView() {} select() {} click() { this.clicked = true; }
 }
 
@@ -121,10 +127,19 @@ async function timelineChecks() {
   assert.equal(test.get('attempts').textContent, '3 attempts left');
   assert.equal(test.get('timeline').children.length, 5);
   const first = test.get('timeline').children[0], second = test.get('timeline').children[1];
-  const dataTransfer = {setData() {}, setDragImage(node) { this.dragImage = node; }, effectAllowed:'', dropEffect:''};
-  first.children[0].ondragstart({dataTransfer, clientX:10, clientY:10, preventDefault() {}});
-  assert.equal(dataTransfer.dragImage, first, 'The whole card must follow the drag.');
-  second.ondrop({dataTransfer, preventDefault() {}});
+  const floating = [];
+  test.context.document.body = {append:node => floating.push(node)};
+  test.context.document.elementFromPoint = () => second;
+  const pointer = {pointerId:1, button:0, clientX:10, clientY:10, preventDefault() {}};
+  const handle = first.children[0];
+  handle.onpointerdown(pointer);
+  assert.equal(first.classList.contains('drag-source'), true, 'Hide the original while dragging.');
+  handle.onpointermove({...pointer,clientX:40,clientY:150});
+  assert.equal(floating[0].style.top, '140px', 'The card follows the pointer.');
+  assert.equal(second.classList.contains('drop-target'), true);
+  handle.onpointerup(pointer);
+  assert.equal(first.classList.contains('drag-source'), false);
+  assert.equal(floating[0].removed, true, 'Remove the floating preview after drop.');
   assert.equal(test.get('timeline').children[0].dataset.cardId, 'card-1');
   await test.get('submitTimeline').onclick();
   assert.equal(submitted[0], 'card-1');
