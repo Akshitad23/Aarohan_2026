@@ -42,7 +42,7 @@
           Your team is ready
         </h1>
         <p>
-          The organiser will start the event for every team together. Keep this page open.
+          Keep this page open. The organiser will start the round.
         </p>
         <div class="scorebar">
           <div class="score">
@@ -71,9 +71,6 @@
           </div>
 
         </div>
-        <p class="muted">
-          Order the space events first, then prompt CHRONOS for cipher hints and decode two words. Every team continues to Round 1: Part B.
-        </p>
       </section>
       <section id="round1" hidden>
         <div class="row between">
@@ -91,14 +88,11 @@
         </div>
         <div class="panel">
           <p>
-            Arrange the events from earliest to latest. You have five minutes and up to three attempts. A correct order opens Round 1: Part B immediately.
+            Arrange the events from earliest to latest. You have three attempts.
           </p>
           <div class="row between">
             <span id="attempts" class="badge">
               3 attempts left
-            </span>
-            <span class="muted">
-              Earliest event at the top
             </span>
           </div>
           <ol id="timeline" class="timeline">
@@ -109,9 +103,6 @@
               Submit order
             </button>
           </div>
-          <p class="muted">
-            After three unsuccessful attempts or five minutes, you continue to Round 1: Part B.
-          </p>
         </div>
       </section>
       <section id="round2" hidden>
@@ -128,17 +119,12 @@
             15:00
           </div>
         </div>
-        <div id="round1Outcome" class="message"></div>
-        <p class="muted">You have fifteen minutes to obtain the cipher hints and submit both decoded words.</p>
         <div class="game-grid">
           <section class="panel">
             <div class="row between">
               <h2>
                 CHRONOS AI
               </h2>
-              <span id="promptCount" class="badge">
-                0 prompts
-              </span>
             </div>
             <div id="chatHistory" class="chat-log" role="log" aria-label="Chat transcript" aria-live="polite">
             </div>
@@ -146,7 +132,7 @@
               <label for="promptInput">
                 Your prompt
               </label>
-              <textarea id="promptInput" maxlength="1000" required placeholder="Ask CHRONOS for the cipher protocol, its steps, or an example.">
+              <textarea id="promptInput" maxlength="1000" required placeholder="Type your prompt…">
               </textarea>
               <div class="actions">
                 <button id="sendPrompt" type="submit">
@@ -173,9 +159,6 @@
           <button id="finishGame" class="secondary" type="button">
             Finish Round 1: Part B
           </button>
-          <span class="muted">
-            You can finish with one or both words unsolved.
-          </span>
         </div>
       </section>
       <section id="finished" class="panel" hidden>
@@ -186,9 +169,6 @@
           Please wait for us to start the next rounds.
         </p>
       </section>
-      <footer>
-        Time limits continue during a refresh or connection loss. All results come from the event server.
-      </footer>
     </main>
   </body>
 </html>

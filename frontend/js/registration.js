@@ -22,9 +22,9 @@
     $('savedTeamName').textContent = saved.team?.team_name || 'Your registered team';
     api.request('/api/tg/session/status?history_after=1000000', {token:saved.token}).then(state => {
       savedBatchName = state.event?.name || state.event?.batch_id || savedBatchName;
-      $('savedTeamStatus').textContent = `This team's access belongs to the ${savedBatchName} session. Generate a transfer code to continue on another computer.`;
+      $('savedTeamStatus').textContent = `${savedBatchName} session`;
       $('continueTeam').textContent = state.phase === 'finished' ? `View ${savedBatchName} results` : `Continue ${savedBatchName}`;
-    }).catch(() => { $('savedTeamStatus').textContent = 'This browser has saved team access. Ask the organiser for a transfer code if you cannot continue here.'; });
+    }).catch(() => { $('savedTeamStatus').textContent = 'Ask the organiser if you cannot resume your team.'; });
   }
   $('generateResumeCode').onclick = async event => {
     const button = event.currentTarget;
@@ -33,7 +33,7 @@
       const result = await api.request('/api/tg/resume-code', {method:'POST', token:saved?.token, body:{}});
       $('resumeCode').value = result.resume_code;
       $('resumeCodeArea').hidden = false;
-      $('resumeCodeStatus').textContent = 'This code expires in 10 minutes and works once. Enter it on the other computer to move team access there.';
+      $('resumeCodeStatus').textContent = 'Valid for 10 minutes. Enter this code on the other computer.';
     } catch (error) { $('resumeCodeStatus').textContent = error.message; }
     finally { button.disabled = false; }
   };

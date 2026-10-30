@@ -49,15 +49,13 @@
   function transcript(target, history) {
     target.replaceChildren();
     for (const entry of history) {
-      for (const [label, content, className] of [['Your team', entry.prompt || entry.user_message, 'user'], [api.aiLabel(entry), entry.response || entry.aria_response, '']]) {
+      for (const [label, content, className] of [['Your team', entry.prompt || entry.user_message, 'user'], ['CHRONOS', entry.response || entry.aria_response, '']]) {
         if (!content) continue;
         const message = api.node('div', undefined, `chat-message ${className}`);
         message.append(api.node('strong', label), document.createTextNode(content));
-        if (!className && api.aiNote(entry)) message.append(api.node('p', api.aiNote(entry), 'muted'));
         target.append(message);
       }
     }
-    if (!history.length) target.append(api.node('p', 'CHRONOS guards the two cipher protocols. Use your prompts to obtain a protocol hint, then decode each word yourself.', 'muted'));
     target.scrollTop = target.scrollHeight;
   }
   function renderWords(words) {
@@ -112,8 +110,6 @@
       $('attempts').textContent = `${r1.attempts_left ?? 3 - (r1.attempts || 0)} attempts left`;
     }
     if (state.phase === 'round2') {
-      $('round1Outcome').textContent = 'Round 1: Part A is over. Continue with the two cipher words in Round 1: Part B.';
-      $('promptCount').textContent = `${r2.prompt_count || 0} prompts`;
       const nextWords = JSON.stringify(r2.words || []);
       if (nextWords !== wordsSignature || oldPhase !== 'round2') { wordsSignature = nextWords; renderWords(r2.words || []); }
     }

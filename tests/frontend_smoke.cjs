@@ -75,7 +75,8 @@ async function gameChecks() {
   latest = {...state(), prompt_history:[{turn:1,prompt:'Explain this protocol.',response:'An actual provider response.',ai_mode:'live',ai_provider:'ollama_backup',ai_primary_failure_reason:'budget_rpm'}]};
   await test.get('promptForm').onsubmit({preventDefault() {}});
   assert.equal(test.get('promptInput').value, '');
-  assert.match(test.get('chatHistory').textContent, /Ollama backup/);
+  assert.match(test.get('chatHistory').textContent, /CHRONOS/);
+  assert.doesNotMatch(test.get('chatHistory').textContent, /Ollama backup/);
   latest = state('finished', true); latest.prompt_history = [];
   test.listeners.visibilitychange(); await settle();
   assert.equal(test.get('finishedHeading').focusCount, 1, 'A new phase should focus its heading once.');
