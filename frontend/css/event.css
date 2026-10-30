@@ -149,11 +149,16 @@ main {
 .registration-page header, .login-page header { max-width: 990px; }
 .login-page main { max-width: 700px; }
 .admin-page main, .admin-page header { max-width: 1380px; }
+.game-page main, .game-page header { max-width: 1720px; }
+.game-page main { padding: 32px; }
 .eyebrow { color: var(--muted); font-family: var(--mono); font-size: 11px; font-weight: 600; line-height: 1.7; letter-spacing: .16em; text-transform: uppercase; }
 main > .eyebrow, .panel > .eyebrow { padding-bottom: 15px; border-bottom: 2px solid var(--ink); }
 .panel { padding: 26px 0; margin: 0; border-top: 1px solid var(--rule); }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.game-grid { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(280px,1fr); gap: 24px; align-items: start; margin-top: 26px; }
+.game-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(300px,360px); gap: 24px; align-items: start; margin-top: 22px; }
+.game-grid > *, .game-grid aside { min-width: 0; }
+#chatHistory { height: clamp(300px, 48vh, 650px); max-height: 650px; }
+#promptInput { min-height: 110px; }
 .game-grid > .panel, .game-grid > aside > .panel { padding: 24px; border: 1px solid var(--rule); border-radius: 3px; background: var(--paper-light); }
 .game-grid > aside > .panel + .panel { margin-top: 24px; }
 .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
@@ -234,7 +239,8 @@ footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--rule);
 @media (max-width: 1000px) {
   body { padding: 22px 20px 30px; }
   main { padding: 38px 34px; }
-  .game-grid { grid-template-columns: minmax(0,1.2fr) minmax(250px,1fr); gap: 18px; }
+  .game-grid { grid-template-columns: minmax(0,1fr) minmax(250px,300px); gap: 18px; }
+  .game-page main { padding: 24px; }
   .game-grid > .panel, .game-grid > aside > .panel { padding: 18px; }
   .score { min-width: 120px; padding: 16px 12px; }
   .score strong { font-size: 30px; }
@@ -251,6 +257,8 @@ footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--rule);
   h2 { font-size: 28px; }
   p { font-size: 16px; }
   .grid, .game-grid { grid-template-columns: 1fr; gap: 12px; }
+  .game-page main { padding: 22px 16px; }
+  #chatHistory { height: clamp(260px, 42vh, 420px); max-height: 420px; }
   .grid label { margin-top: 12px; }
   .game-grid > aside > .panel + .panel { margin-top: 18px; }
   .scorebar { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); }
